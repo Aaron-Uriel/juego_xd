@@ -8,19 +8,11 @@
 #include "pseudoconio.h"
 #include "world.h"
 
-const uint8_t target_y_fov = 12;
-const uint8_t target_x_fov = 40;
-
-
 typedef struct {
-    uint8_t positive_axis;
-    uint8_t negative_axis;
-} OneDimensionVisibilityLimit;
-
-typedef struct {
-    OneDimensionVisibilityLimit x_limit;
-    OneDimensionVisibilityLimit y_limit;
-} VisibilityLimit;
+    uint8_t height;
+    uint8_t width;
+} Resolution;
+extern const Resolution terminal_resolution;
 
 void render_visible(const World *world, Entity *player);
 bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
@@ -59,23 +51,31 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
 
+    //Cálculos para saber de dónde a donde se va a poder ver
+    uint16_t the_upper_visible_point = player->current_position->y - (terminal_resolution.height/2) - 1;
+    uint16_t the_leftmost_visible_point = player->current_position->x - (terminal_resolution.width/2) - 1;
 
+    if (the_upper_visible_point > world->height) {
+        the_upper_visible_point = 0;
+    }
+    if (the_leftmost_visible_point > world->width) {
+        the_leftmost_visible_point = 0;
+    }
 
-    VisibilityLimit render_limit;
-    render_limit = (VisibilityLimit) {
-        .x_limit = (OneDimensionVisibilityLimit) {
-            .positive_axis = (player->current_position->x + target_x_fov > world->width)? world->width: player->current_position->x + target_x_fov,
-            .negative_axis = (player->current_position->x - target_x_fov < 0)? 0: player->current_position->x - target_x_fov,
-        },
-        .y_limit = (OneDimensionVisibilityLimit) {
-            .positive_axis = (player->current_position->y + target_y_fov > world->height)? world->height: player->current_position->y + target_y_fov,
-            .negative_axis = (player->current_position->y - target_y_fov < 0)? 0: player->current_position->y - target_y_fov,
-        },
-    };
+    uint16_t the_lowest_visible_point = the_upper_visible_point + terminal_resolution.height - 1;
+    uint16_t the_rightest_visible_point = the_leftmost_visible_point + terminal_resolution.width - 1;
 
-    int row, column;
-    for (row = render_limit.y_limit.negative_axis; row < render_limit.y_limit.positive_axis; row++) {
-        for (column = render_limit.x_limit.negative_axis; column < render_limit.x_limit.positive_axis; column++) {
+    if (the_lowest_visible_point > world->height) {
+        the_lowest_visible_point = world->height - 1;
+    }
+    if (the_rightest_visible_point > world->width) {
+        the_rightest_visible_point = world->width - 1;
+    }
+    //Fin de los cálculos
+
+    uint16_t row, column;
+    for (row = the_upper_visible_point; row <= the_lowest_visible_point; row++) {
+        for (column = the_leftmost_visible_point; column <= the_rightest_visible_point; column++) {
             printf("%c", map[row][column]);
         }
         printf("\n");

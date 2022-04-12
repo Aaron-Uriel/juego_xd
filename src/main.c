@@ -12,6 +12,15 @@
 #define LEFT_ARROW  "\033[D"
 #define RIGHT_ARROW "\033[C"
 
+typedef struct {
+    uint8_t height;
+    uint8_t width;
+} Resolution;
+extern const Resolution terminal_resolution = {
+    .height = 23,
+    .width = 80
+};
+
 #define OPTION_LIMIT 3
 enum Options {
     NEW_GAME = 1,
