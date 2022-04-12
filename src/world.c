@@ -4,12 +4,38 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include <assert.h>
+
 #include "world.h"
+
+/*
+   Para obener correctamente el mapa desde la estructura world, necesitamos:
+   char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
+   O similar.
+   Mas información en: https://stackoverflow.com/questions/54709981/how-to-initiliaze-a-dynamic-2d-array-inside-a-struct-in-c
+*/
 
 
 void fill_world(const uint16_t height, const uint16_t width, char (*map)[*]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
+Position *init_position() {
+    Position *position_struct = malloc(sizeof(Position));
+    return position_struct;
+}
+
+Position *init_and_set_position(uint16_t x, uint16_t y) {
+    Position *position_struct = malloc(sizeof(Position));
+    position_struct->x = x;
+    position_struct->y = y;
+
+    return position_struct;
+}
+
+void position_set(uint16_t x, uint16_t y, Position *position_struct) {
+    position_struct->x = x;
+    position_struct->y = y;
+}
 
 World *init_world(const uint16_t height, const uint16_t width) {
     World *world_struct = calloc(1, sizeof (*world_struct) + sizeof(char[height][width]));//Cambiar
@@ -41,26 +67,37 @@ void fill_world(const uint16_t height, const uint16_t width, char map[height][wi
     }
 }
 
-Entity *init_entity(World *world_struct) {
-    //Forma muy extraña de hacer una referencia al mapa del mundo
-    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
+Entity *init_entity(const World *world_struct, char character) {
+    const Position initial_position = {
+        .x = rand_min_max(1, world_struct->width - 2),
+        .y = rand_min_max(1, world_struct->height - 2)
+    };
 
-    Entity *player = malloc(sizeof(Entity));
-    player->y_coordinate = rand_min_max(1, world_struct->height - 2);
-    player->x_coordinate = rand_min_max(1, world_struct->width - 2);
-    player->character = '*';
+    // Las posición actual y anterior son la misma al principio
+    Entity *entity = malloc(sizeof(Entity));
+    entity->current_position = init_and_set_position(
+        initial_position.x,
+        initial_position.y
+    );
+    entity->previous_position = init_and_set_position(
+        initial_position.x,
+        initial_position.y
+    );
+    entity->character = character;
 
-    //world_map[player->y_coordinate][player->x_coordinate] = '*';    
-
-    return player;
+    return entity;
 }
 
-bool update_world(World *world_struct, Entity *entities[], uint16_t array_length) {
+bool update_world(World *world_struct, Entity *entities[], uint16_t entities_number) {
     char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
 
-    int i;
-    for (i = 0; i < array_length; i++) {
-        world_map[entities[i]->y_coordinate][entities[i]->x_coordinate] = entities[i]->character;
+    int entity_index;
+    Position current_entity_position;
+    for (entity_index = 0; entity_index < entities_number; entity_index++) {
+        current_entity_position = *(entities[entity_index]->current_position);
+        assert(current_entity_position.x == entities[entity_index]->current_position->x);
+
+        world_map[current_entity_position.y][current_entity_position.x] = entities[entity_index]->character;
     }
 
     return 0;

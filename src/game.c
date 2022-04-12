@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "game.h"
 #include "pseudoconio.h"
 #include "world.h"
 
@@ -28,7 +29,7 @@ void new_game() {
     World *world = init_world(100, 200);
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
     int row, column;
-    Entity *player = init_entity(world);
+    Entity *player = init_entity(world, '*');
     Entity *entities[1];
     entities[0] = player;
     char option;
@@ -40,16 +41,16 @@ void new_game() {
         bool exceeds_limits;
         switch (option) {
             case 'w':
-                player->y_coordinate -= 1;
+                player->current_position->y -=1;
                 break;
             case 'a':
-                player->x_coordinate -= 1;
+                player->current_position->x -=1;
                 break;
             case 's':
-                player->y_coordinate += 1;
+                player->current_position->y += 1;
                 break;
             case 'd':
-                player->x_coordinate += 1;
+                player->current_position->x += 1;
                 break;
         }
     } while(1);
@@ -58,15 +59,17 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
 
+
+
     VisibilityLimit render_limit;
     render_limit = (VisibilityLimit) {
         .x_limit = (OneDimensionVisibilityLimit) {
-            .positive_axis = (player->x_coordinate + target_x_fov > world->width)? world->width: player->x_coordinate + target_x_fov,
-            .negative_axis = (player->x_coordinate - target_x_fov < 0)? 0: player->x_coordinate - target_x_fov,
+            .positive_axis = (player->current_position->x + target_x_fov > world->width)? world->width: player->current_position->x + target_x_fov,
+            .negative_axis = (player->current_position->x - target_x_fov < 0)? 0: player->current_position->x - target_x_fov,
         },
         .y_limit = (OneDimensionVisibilityLimit) {
-            .positive_axis = (player->y_coordinate + target_y_fov > world->height)? world->height: player->y_coordinate + target_y_fov,
-            .negative_axis = (player->y_coordinate - target_y_fov < 0)? 0: player->y_coordinate - target_y_fov,
+            .positive_axis = (player->current_position->y + target_y_fov > world->height)? world->height: player->current_position->y + target_y_fov,
+            .negative_axis = (player->current_position->y - target_y_fov < 0)? 0: player->current_position->y - target_y_fov,
         },
     };
 
