@@ -3,6 +3,7 @@
 #define WORLD_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint16_t x;
@@ -25,6 +26,8 @@ typedef struct {
     char character;
 } Entity;
 Entity *init_entity(const World *world, char character);
+uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, const Entity *entity, const World *world_struct);
+
 bool update_world(World *world_struct, Entity *entities[], uint16_t array_length);
 
 

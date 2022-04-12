@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "game.h"
 #include "pseudoconio.h"
@@ -20,31 +19,34 @@ bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
 void new_game() {
     World *world = init_world(100, 200);
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
-    int row, column;
+
+    Entity *entities[10];
     Entity *player = init_entity(world, '*');
-    Entity *entities[1];
     entities[0] = player;
+
     char option;
     do {
         system("clear");
         update_world(world, entities, 1);
         render_visible(world, player);
         option = getch();
-        bool exceeds_limits;
+        
+        int8_t delta_x = 0, delta_y = 0;
         switch (option) {
-            case 'w':
-                player->current_position->y -=1;
+            case 'w': case 'A':
+                delta_y = -1;
                 break;
-            case 'a':
-                player->current_position->x -=1;
+            case 'a': case 'D':
+                delta_x = -1;
                 break;
-            case 's':
-                player->current_position->y += 1;
+            case 's': case 'B':
+                delta_y = 1;
                 break;
-            case 'd':
-                player->current_position->x += 1;
+            case 'd': case 'C':
+                delta_x = 1;
                 break;
         }
+        request_change_of_position(delta_x, delta_y, player, world);
     } while(1);
 }
 
@@ -80,4 +82,5 @@ void render_visible(const World *world, Entity *player) {
         }
         printf("\n");
     }
+    printf("P(%d, %d)", player->current_position->y, player->current_position->x);
 }

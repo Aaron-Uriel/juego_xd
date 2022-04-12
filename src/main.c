@@ -50,12 +50,12 @@ int main() {
 
         input = getch();
         switch (input) {
-            case 'A': 
+            case 'A': case 'w':
                 if (selected_option > 1) {
                     selected_option--;
                 }
                 break;
-            case 'B': 
+            case 'B': case 's':
                 if (selected_option < 3) {
                     selected_option++;
                 }
