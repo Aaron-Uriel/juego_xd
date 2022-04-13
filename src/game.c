@@ -7,11 +7,6 @@
 #include "pseudoconio.h"
 #include "world.h"
 
-typedef struct {
-    uint8_t height;
-    uint8_t width;
-} Resolution;
-extern const Resolution terminal_resolution;
 
 void render_visible(const World *world, Entity *player);
 bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
