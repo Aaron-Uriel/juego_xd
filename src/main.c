@@ -10,15 +10,10 @@
 #include "pseudoconio.h"
 #include "game.h"
 
-#define UP_ARROW    "\033[A"
-#define DOWN_ARROW  "\033[B"
-#define LEFT_ARROW  "\033[D"
-#define RIGHT_ARROW "\033[C"
-
 extern Resolution terminal_resolution;
 Resolution terminal_resolution = {
-    .height = 24,
-    .width = 80
+    .height = 36,
+    .width = 168
 };
 
 void resolution_screen();
