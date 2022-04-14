@@ -72,27 +72,27 @@ Entity *init_entity(const World *world_struct, char character) {
 
     // Las posición actual y anterior son la misma al principio
     Entity *entity = malloc(sizeof(Entity));
-    entity->current_position = init_and_set_position(
+    entity->current_position = (Position) {
         initial_position.x,
         initial_position.y
-    );
-    entity->previous_position = init_and_set_position(
+    };
+    entity->previous_position = (Position) {
         initial_position.x,
         initial_position.y
-    );
+    };
     entity->character = character;
 
     return entity;
 }
 
-uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, const Entity *entity, const World *world) {
+uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world) {
     char (*world_map)[world->width] = (char(*)[world->width]) world->world_ptr;
 
-    *(entity->previous_position) = *(entity->current_position);
+    entity->previous_position = entity->current_position;
 
     const Position requested_new_position = {
-        .x = entity->current_position->x + delta_x,
-        .y = entity->current_position->y + delta_y
+        .x = entity->current_position.x + delta_x,
+        .y = entity->current_position.y + delta_y
     };
 
     bool is_out_of_bounds = (requested_new_position.x >= world->width) || (requested_new_position.y >= world->height);
@@ -101,7 +101,7 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, c
         return 1;
     }
 
-    *(entity->current_position) = requested_new_position;
+    entity->current_position = requested_new_position;
 
     return 0;
 }
@@ -113,8 +113,8 @@ bool update_world(World *world_struct, Entity *entities[], uint16_t entities_num
     Position entity_current_position, entity_previous_position;
     bool has_entity_moved;
     for (entity_index = 0; entity_index < entities_number; entity_index++) {
-        entity_current_position = *(entities[entity_index]->current_position);
-        entity_previous_position = *(entities[entity_index]->previous_position);
+        entity_current_position = entities[entity_index]->current_position;
+        entity_previous_position = entities[entity_index]->previous_position;
 
         world_map[entity_current_position.y][entity_current_position.x] = entities[entity_index]->character;
 

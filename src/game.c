@@ -49,8 +49,8 @@ void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
 
     //Cálculos para saber de dónde a donde se va a poder ver
-    uint16_t the_upper_visible_point = player->current_position->y - (terminal_resolution.height/2) - 1;
-    uint16_t the_leftmost_visible_point = player->current_position->x - (terminal_resolution.width/2) - 1;
+    uint16_t the_upper_visible_point = player->current_position.y - (terminal_resolution.height/2) - 1;
+    uint16_t the_leftmost_visible_point = player->current_position.x - (terminal_resolution.width/2) - 1;
 
     if (the_upper_visible_point > world->height) {
         the_upper_visible_point = 0;
@@ -77,5 +77,5 @@ void render_visible(const World *world, Entity *player) {
         }
         printf("\n");
     }
-    printf("P(%d, %d)", player->current_position->y, player->current_position->x);
+    printf("P(%d, %d)", player->current_position.y, player->current_position.x);
 }
