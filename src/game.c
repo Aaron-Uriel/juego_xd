@@ -24,8 +24,8 @@ void new_game() {
         system("clear");
         update_world(world, entities, 1);
         render_visible(world, player);
+
         option = getch();
-        
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
             case 'w': case 'A':
@@ -77,5 +77,5 @@ void render_visible(const World *world, Entity *player) {
         }
         printf("\n");
     }
-    printf("P(%d, %d)", player->current_position.y, player->current_position.x);
+    printf("P(%d, %d)\n", player->current_position.y, player->current_position.x);
 }
