@@ -9,9 +9,6 @@ typedef struct {
     uint16_t x;
     uint16_t y;
 } Position;
-Position *init_position();
-Position *init_and_set_position(uint16_t x, uint16_t y);
-void position_set(uint16_t x, uint16_t y, Position *position_struct);
 
 typedef struct {
     uint16_t height;

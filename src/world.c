@@ -17,24 +17,6 @@
 void fill_world(const uint16_t height, const uint16_t width, char (*map)[*]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
-Position *init_position() {
-    Position *position_struct = malloc(sizeof(Position));
-    return position_struct;
-}
-
-Position *init_and_set_position(uint16_t x, uint16_t y) {
-    Position *position_struct = malloc(sizeof(Position));
-    position_struct->x = x;
-    position_struct->y = y;
-
-    return position_struct;
-}
-
-void position_set(uint16_t x, uint16_t y, Position *position_struct) {
-    position_struct->x = x;
-    position_struct->y = y;
-}
-
 World *init_world(const uint16_t height, const uint16_t width) {
     World *world_struct = calloc(1, sizeof (*world_struct) + sizeof(char[height][width]));//Cambiar
 
@@ -65,10 +47,15 @@ void fill_world(const uint16_t height, const uint16_t width, char map[height][wi
 }
 
 Entity *init_entity(const World *world_struct, char character) {
-    const Position initial_position = {
-        .x = rand_min_max(1, world_struct->width - 2),
-        .y = rand_min_max(1, world_struct->height - 2)
-    };
+    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
+
+    Position initial_position;
+    do {
+        initial_position = (Position) {
+            .x = rand_min_max(1, world_struct->width - 2),
+            .y = rand_min_max(1, world_struct->height - 2)
+        };
+    } while (world_map[initial_position.y][initial_position.x] != ' ');
 
     // Las posición actual y anterior son la misma al principio
     Entity *entity = malloc(sizeof(Entity));
@@ -128,6 +115,5 @@ bool update_world(World *world_struct, Entity *entities[], uint16_t entities_num
 }
 
 int32_t rand_min_max(int32_t min, int32_t max) {
-    srand(time(NULL));
     return (rand() % max) + min;
 }

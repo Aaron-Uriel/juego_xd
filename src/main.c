@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "pseudoconio.h"
 #include "game.h"
@@ -20,7 +21,8 @@ enum Options {
 };
 
 int main() {
-    //resolution_screen();
+    srand(time(NULL));
+    resolution_screen();
     const char option_list[OPTION_LIMIT][20] = {
         "Nueva partida.",
         "Continuar partida.",

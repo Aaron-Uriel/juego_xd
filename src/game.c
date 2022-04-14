@@ -15,14 +15,20 @@ void new_game() {
     World *world = init_world(100, 200);
     const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
 
-    Entity *entities[10];
+    char entities_limit = 32;
     Entity *player = init_entity(world, '*');
+    Entity *entities[entities_limit];
     entities[0] = player;
+    int i;
+    for (i = 1; i < entities_limit; i++) {
+        entities[i] = init_entity(world, '.');
+    }
+
 
     char option;
     do {
         system("clear");
-        update_world(world, entities, 1);
+        update_world(world, entities, entities_limit);
         render_visible(world, player);
 
         option = getch();
