@@ -20,7 +20,7 @@ enum Options {
 };
 
 int main() {
-    resolution_screen();
+    //resolution_screen();
     const char option_list[OPTION_LIMIT][20] = {
         "Nueva partida.",
         "Continuar partida.",
