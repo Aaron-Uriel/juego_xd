@@ -11,10 +11,15 @@ typedef struct {
 } Position;
 
 typedef struct {
-    uint16_t height;
+    uint16_t length;
     uint16_t width;
-    char world_ptr[]; //Se supone que esto es un puntero a un arreglo bidimensional
-} World;
+    char raw_table[]; // No tocar directamente
+} DynamicTable;
+DynamicTable *table_allocate(const uint16_t height, const uint16_t width);
+
+// Sinónimos
+typedef DynamicTable World;
+typedef DynamicTable Structure;
 World *init_world(const uint16_t height, const uint16_t width);
 
 typedef struct {

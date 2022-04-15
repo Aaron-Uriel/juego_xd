@@ -13,7 +13,7 @@ bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
 
 void new_game() {
     World *world = init_world(100, 200);
-    const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
+    const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
     char entities_limit = 32;
     Entity *player = init_entity(world, '*');
@@ -52,13 +52,13 @@ void new_game() {
 }
 
 void render_visible(const World *world, Entity *player) {
-    const char (*map)[world->width] = (char(*)[world->width]) world->world_ptr;
+    const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
     //Cálculos para saber de dónde a donde se va a poder ver
     uint16_t the_upper_visible_point = player->current_position.y - (terminal_resolution.height/2) - 1;
     uint16_t the_leftmost_visible_point = player->current_position.x - (terminal_resolution.width/2) - 1;
 
-    if (the_upper_visible_point > world->height) {
+    if (the_upper_visible_point > world->length) {
         the_upper_visible_point = 0;
     }
     if (the_leftmost_visible_point > world->width) {
@@ -68,8 +68,8 @@ void render_visible(const World *world, Entity *player) {
     uint16_t the_lowest_visible_point = the_upper_visible_point + terminal_resolution.height - 1;
     uint16_t the_rightest_visible_point = the_leftmost_visible_point + terminal_resolution.width - 1;
 
-    if (the_lowest_visible_point > world->height) {
-        the_lowest_visible_point = world->height - 1;
+    if (the_lowest_visible_point > world->length) {
+        the_lowest_visible_point = world->length - 1;
     }
     if (the_rightest_visible_point > world->width) {
         the_rightest_visible_point = world->width - 1;

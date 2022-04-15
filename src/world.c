@@ -20,10 +20,10 @@ int32_t rand_min_max(int32_t min, int32_t max);
 World *init_world(const uint16_t height, const uint16_t width) {
     World *world_struct = calloc(1, sizeof (*world_struct) + sizeof(char[height][width]));//Cambiar
 
-    world_struct->height = height;
+    world_struct->length = height;
     world_struct->width = width;
 
-    char (*world)[width] = (char(*)[width]) world_struct->world_ptr;
+    char (*world)[width] = (char(*)[width]) world_struct->raw_table;
     fill_world(height, width, *world);
 
     return world_struct;
@@ -47,13 +47,13 @@ void fill_world(const uint16_t height, const uint16_t width, char map[height][wi
 }
 
 Entity *init_entity(const World *world_struct, char character) {
-    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
+    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->raw_table;
 
     Position initial_position;
     do {
         initial_position = (Position) {
             .x = rand_min_max(1, world_struct->width - 2),
-            .y = rand_min_max(1, world_struct->height - 2)
+            .y = rand_min_max(1, world_struct->length - 2)
         };
     } while (world_map[initial_position.y][initial_position.x] != ' ');
 
@@ -73,7 +73,7 @@ Entity *init_entity(const World *world_struct, char character) {
 }
 
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world) {
-    char (*world_map)[world->width] = (char(*)[world->width]) world->world_ptr;
+    char (*world_map)[world->width] = (char(*)[world->width]) world->raw_table;
 
     entity->previous_position = entity->current_position;
 
@@ -82,7 +82,7 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, E
         .y = entity->current_position.y + delta_y
     };
 
-    bool is_out_of_bounds = (requested_new_position.x >= world->width) || (requested_new_position.y >= world->height);
+    bool is_out_of_bounds = (requested_new_position.x >= world->width) || (requested_new_position.y >= world->length);
     bool is_over_something = (world_map[requested_new_position.y][requested_new_position.x] != ' ');
     if (is_out_of_bounds || is_over_something) {
         return 1;
@@ -94,7 +94,7 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, E
 }
 
 bool update_world(World *world_struct, Entity *entities[], uint16_t entities_number) {
-    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
+    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->raw_table;
 
     int entity_index;
     Position entity_current_position, entity_previous_position;
