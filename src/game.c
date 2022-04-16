@@ -19,9 +19,6 @@ void new_game() {
     Entity *player = init_entity(world, '*');
     Entity *entities[entities_limit];
     entities[0] = player;
-    player->current_position.x = 160;
-    player->current_position.y = 86;
-    player->previous_position = player->current_position;
     int i;
     for (i = 1; i < entities_limit; i++) {
         entities[i] = init_entity(world, '.');
@@ -87,6 +84,6 @@ void render_visible(const World *world, Entity *player) {
     }
     printf("P(%d, %d)\n", 
             player->current_position.y, 
-            player->current_position.x,
+            player->current_position.x
     );
 }
