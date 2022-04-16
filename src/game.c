@@ -57,22 +57,11 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
-    static bool player_is_on_vertical_end_quadrant = false;
-    static bool player_is_on_horizontal_end_quadrant = false;
-
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
     Position the_quadrant_we_are_in = {
         .y = player->current_position.y / terminal_resolution.height,
         .x = player->current_position.x / terminal_resolution.width
     };
-
-    if (player_is_on_vertical_end_quadrant) { 
-        the_quadrant_we_are_in.y = (player->current_position.y + terminal_resolution.height) / terminal_resolution.height;
-    }
-    if (player_is_on_horizontal_end_quadrant) {
-        the_quadrant_we_are_in.x = (player->current_position.x + terminal_resolution.width) / terminal_resolution.width;
-    }
-
 
     Position quadrant_start_point = {
         .y = terminal_resolution.height * the_quadrant_we_are_in.y,
@@ -84,22 +73,8 @@ void render_visible(const World *world, Entity *player) {
         .x = quadrant_start_point.x + terminal_resolution.width
     };
 
-    // Cálculos para cuando estamos en el final del mundo, en el caso de que el último cuadrante sea mas pequeño que los demás
-    if ((quadrant_end_point.y > world->length)) {
-        quadrant_start_point.y = world->length - terminal_resolution.height;
-        quadrant_end_point.y = world->length;
-    }
-
-    if (quadrant_end_point.x > world->width) {
-        quadrant_start_point.x = world->width - terminal_resolution.width;
-        quadrant_end_point.x = world->width;
-    }
-
-    if (quadrant_end_point.y == world->length) { player_is_on_vertical_end_quadrant = true; }
-    if (quadrant_end_point.x == world->width) { player_is_on_horizontal_end_quadrant = true; }
-
-    if (player->current_position.y < (world->length - terminal_resolution.height + 1)) { player_is_on_vertical_end_quadrant = false; }
-    if (player->current_position.x < (world->width - terminal_resolution.width + 1)) { player_is_on_horizontal_end_quadrant = false; }
+    if (quadrant_end_point.y > world->length) { quadrant_end_point.y = world->length; }
+    if (quadrant_end_point.x > world->width)  { quadrant_end_point.x = world->width; }
 
     //Fin de los cálculos
 
@@ -110,10 +85,8 @@ void render_visible(const World *world, Entity *player) {
         }
         printf("\n");
     }
-    printf("P(%d, %d), StartPoint(%d, %d)\n", 
+    printf("P(%d, %d)\n", 
             player->current_position.y, 
             player->current_position.x,
-            quadrant_start_point.y,
-            quadrant_start_point.x
     );
 }
