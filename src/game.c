@@ -15,10 +15,13 @@ void new_game() {
     World *world = init_world(100, 200);
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
-    char entities_limit = 32;
+    char entities_limit = 64;
     Entity *player = init_entity(world, '*');
     Entity *entities[entities_limit];
     entities[0] = player;
+    player->current_position.x = 160;
+    player->current_position.y = 86;
+    player->previous_position = player->current_position;
     int i;
     for (i = 1; i < entities_limit; i++) {
         entities[i] = init_entity(world, '.');
@@ -54,34 +57,63 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
-    //Cálculos para saber de dónde a donde se va a poder ver
-    uint16_t the_upper_visible_point = player->current_position.y - (terminal_resolution.height/2) - 1;
-    uint16_t the_leftmost_visible_point = player->current_position.x - (terminal_resolution.width/2) - 1;
+    static bool player_is_on_vertical_end_quadrant = false;
+    static bool player_is_on_horizontal_end_quadrant = false;
 
-    if (the_upper_visible_point > world->length) {
-        the_upper_visible_point = 0;
+    // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
+    Position the_quadrant_we_are_in = {
+        .y = player->current_position.y / terminal_resolution.height,
+        .x = player->current_position.x / terminal_resolution.width
+    };
+
+    if (player_is_on_vertical_end_quadrant) { 
+        the_quadrant_we_are_in.y = (player->current_position.y + terminal_resolution.height) / terminal_resolution.height;
     }
-    if (the_leftmost_visible_point > world->width) {
-        the_leftmost_visible_point = 0;
+    if (player_is_on_horizontal_end_quadrant) {
+        the_quadrant_we_are_in.x = (player->current_position.x + terminal_resolution.width) / terminal_resolution.width;
     }
 
-    uint16_t the_lowest_visible_point = the_upper_visible_point + terminal_resolution.height - 1;
-    uint16_t the_rightest_visible_point = the_leftmost_visible_point + terminal_resolution.width - 1;
 
-    if (the_lowest_visible_point > world->length) {
-        the_lowest_visible_point = world->length - 1;
+    Position quadrant_start_point = {
+        .y = terminal_resolution.height * the_quadrant_we_are_in.y,
+        .x = terminal_resolution.width * the_quadrant_we_are_in.x
+    };
+
+    Position quadrant_end_point = {
+        .y = quadrant_start_point.y + terminal_resolution.height,
+        .x = quadrant_start_point.x + terminal_resolution.width
+    };
+
+    // Cálculos para cuando estamos en el final del mundo, en el caso de que el último cuadrante sea mas pequeño que los demás
+    if ((quadrant_end_point.y > world->length)) {
+        quadrant_start_point.y = world->length - terminal_resolution.height;
+        quadrant_end_point.y = world->length;
     }
-    if (the_rightest_visible_point > world->width) {
-        the_rightest_visible_point = world->width - 1;
+
+    if (quadrant_end_point.x > world->width) {
+        quadrant_start_point.x = world->width - terminal_resolution.width;
+        quadrant_end_point.x = world->width;
     }
+
+    if (quadrant_end_point.y == world->length) { player_is_on_vertical_end_quadrant = true; }
+    if (quadrant_end_point.x == world->width) { player_is_on_horizontal_end_quadrant = true; }
+
+    if (player->current_position.y < (world->length - terminal_resolution.height + 1)) { player_is_on_vertical_end_quadrant = false; }
+    if (player->current_position.x < (world->width - terminal_resolution.width + 1)) { player_is_on_horizontal_end_quadrant = false; }
+
     //Fin de los cálculos
 
     uint16_t row, column;
-    for (row = the_upper_visible_point; row <= the_lowest_visible_point; row++) {
-        for (column = the_leftmost_visible_point; column <= the_rightest_visible_point; column++) {
+    for (row = quadrant_start_point.y; row < quadrant_end_point.y; row++) {
+        for (column = quadrant_start_point.x; column < quadrant_end_point.x; column++) {
             printf("%c", map[row][column]);
         }
         printf("\n");
     }
-    printf("P(%d, %d)\n", player->current_position.y, player->current_position.x);
+    printf("P(%d, %d), StartPoint(%d, %d)\n", 
+            player->current_position.y, 
+            player->current_position.x,
+            quadrant_start_point.y,
+            quadrant_start_point.x
+    );
 }

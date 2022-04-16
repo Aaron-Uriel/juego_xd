@@ -9,8 +9,8 @@
 #include "resolution.h"
 
 Resolution terminal_resolution = {
-    .height = 36,
-    .width = 168
+    .height = 22,
+    .width = 80
 };
 
 #define OPTION_LIMIT 3
@@ -22,7 +22,7 @@ enum Options {
 
 int main() {
     srand(time(NULL));
-    resolution_screen();
+    //resolution_screen();
     const char option_list[OPTION_LIMIT][20] = {
         "Nueva partida.",
         "Continuar partida.",
