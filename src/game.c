@@ -45,6 +45,9 @@ void new_game() {
              case KEY_RIGHT: case 'd':
                 delta_x = 1;
                 break;
+            case 'q': case 'Q':
+                endwin();
+                exit(0);
         }
         request_change_of_position(delta_x, delta_y, player, world);
     } while(1);
@@ -85,8 +88,9 @@ void render_visible(const World *world, Entity *player) {
 
     uint16_t terminal_row = 0, terminal_column = 0, map_row, map_column;
     for (map_row = quadrant_start_point.y; map_row < quadrant_end_point.y; terminal_row++, map_row++) {
+        wmove(gameplay_window, terminal_row, 0); // Movernos a tal fila y dejarnos al inicio
         for (map_column = quadrant_start_point.x, terminal_column = 0; map_column < quadrant_end_point.x; terminal_column++, map_column++) {
-            mvwprintw(gameplay_window, terminal_row, terminal_column, "%c", map[map_row][map_column]);
+            wprintw(gameplay_window, "%c", map[map_row][map_column]);
         }
     }
     printw("P(%d, %d)", 
