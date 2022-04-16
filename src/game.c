@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 
+#include <ncurses.h>
+
 #include "game.h"
-#include "pseudoconio.h"
 #include "world.h"
 #include "resolution.h"
 
@@ -25,25 +25,24 @@ void new_game() {
     }
 
 
-    char option;
+    int32_t option;
     do {
-        system("clear");
         update_world(world, entities, entities_limit);
         render_visible(world, player);
 
         option = getch();
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
-            case 'w': case 'A':
+            case KEY_UP: case 'w':
                 delta_y = -1;
                 break;
-            case 'a': case 'D':
+            case KEY_LEFT: case 'a':
                 delta_x = -1;
                 break;
-            case 's': case 'B':
+            case KEY_DOWN: case 's':
                 delta_y = 1;
                 break;
-            case 'd': case 'C':
+             case KEY_RIGHT: case 'd':
                 delta_x = 1;
                 break;
         }
@@ -54,20 +53,26 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
+    WINDOW *gameplay_window = newwin(terminal_resolution.height - 2, terminal_resolution.width, 0, 0);
+    Resolution gameplay_resolution;
+    getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
+    // Organizamos todas las subventanas dentro de la ventana principal, como si fuesen cajas
+    box(gameplay_window, 0, 0);
+
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
     Position the_quadrant_we_are_in = {
-        .y = player->current_position.y / terminal_resolution.height,
-        .x = player->current_position.x / terminal_resolution.width
+        .y = player->current_position.y / gameplay_resolution.height,
+        .x = player->current_position.x / gameplay_resolution.width
     };
 
     Position quadrant_start_point = {
-        .y = terminal_resolution.height * the_quadrant_we_are_in.y,
-        .x = terminal_resolution.width * the_quadrant_we_are_in.x
+        .y = gameplay_resolution.height * the_quadrant_we_are_in.y,
+        .x = gameplay_resolution.width * the_quadrant_we_are_in.x
     };
 
     Position quadrant_end_point = {
-        .y = quadrant_start_point.y + terminal_resolution.height,
-        .x = quadrant_start_point.x + terminal_resolution.width
+        .y = quadrant_start_point.y + gameplay_resolution.height,
+        .x = quadrant_start_point.x + gameplay_resolution.width
     };
 
     if (quadrant_end_point.y > world->length) { quadrant_end_point.y = world->length; }
@@ -75,15 +80,19 @@ void render_visible(const World *world, Entity *player) {
 
     //Fin de los cálculos
 
-    uint16_t row, column;
-    for (row = quadrant_start_point.y; row < quadrant_end_point.y; row++) {
-        for (column = quadrant_start_point.x; column < quadrant_end_point.x; column++) {
-            printf("%c", map[row][column]);
+    wclear(gameplay_window);
+    clear();
+
+    uint16_t terminal_row = 0, terminal_column = 0, map_row, map_column;
+    for (map_row = quadrant_start_point.y; map_row < quadrant_end_point.y; terminal_row++, map_row++) {
+        for (map_column = quadrant_start_point.x, terminal_column = 0; map_column < quadrant_end_point.x; terminal_column++, map_column++) {
+            mvwprintw(gameplay_window, terminal_row, terminal_column, "%c", map[map_row][map_column]);
         }
-        printf("\n");
     }
-    printf("P(%d, %d)\n", 
+    printw("P(%d, %d)", 
             player->current_position.y, 
             player->current_position.x
     );
+    refresh();
+    wrefresh(gameplay_window);
 }

@@ -1,10 +1,10 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include "pseudoconio.h"
+#include <ncurses.h>
+
 #include "game.h"
 #include "resolution.h"
 
@@ -21,8 +21,15 @@ enum Options {
 };
 
 int main() {
+    // Inicialización y ajustes de ncurses
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    getmaxyx(stdscr, terminal_resolution.height, terminal_resolution.width);
+
     srand(time(NULL));
-    //resolution_screen();
+
     const char option_list[OPTION_LIMIT][20] = {
         "Nueva partida.",
         "Continuar partida.",
@@ -31,25 +38,26 @@ int main() {
 
     char selected_option = 1, i;
     bool is_option_selected, is_enter_pressed;
-    char input;
+    int32_t input;
     do {
-        system("clear");
-        printf("Bienvenido al juego xd.\n"
+        clear();
+        printw("Bienvenido al juego xd.\n"
                "¿Qué desea hacer?:\n");
 
         for (i = 0; i < OPTION_LIMIT; ++i) {
             is_option_selected = ((i + 1) == selected_option);
-            printf("    %d.- %-20s%s\n", i + 1, option_list[i], (is_option_selected)? "[*]": "[ ]");
+            printw("    %d.- %-20s%s\n", i + 1, option_list[i], (is_option_selected)? "[*]": "[ ]");
         }
+        refresh();
 
         input = getch();
         switch (input) {
-            case 'A': case 'w':
+            case KEY_UP: case 'w':
                 if (selected_option > 1) {
                     selected_option--;
                 }
                 break;
-            case 'B': case 's':
+            case KEY_DOWN: case 's':
                 if (selected_option < 3) {
                     selected_option++;
                 }
