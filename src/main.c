@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <locale.h>
 
 #include <ncurses.h>
 
@@ -22,6 +23,7 @@ enum Options {
 
 int main() {
     // Inicialización y ajustes de ncurses
+    setlocale(LC_CTYPE, "");
     initscr();
     cbreak();
     noecho();
@@ -42,7 +44,7 @@ int main() {
     do {
         clear();
         printw("Bienvenido al juego xd.\n"
-               "¿Qué desea hacer?:\n");
+               u8"¿Qué desea hacer?:\n");
 
         for (i = 0; i < OPTION_LIMIT; ++i) {
             is_option_selected = ((i + 1) == selected_option);

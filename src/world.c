@@ -13,8 +13,6 @@
    Mas información en: https://stackoverflow.com/questions/54709981/how-to-initiliaze-a-dynamic-2d-array-inside-a-struct-in-c
 */
 
-
-void fill_world(const uint16_t height, const uint16_t width, char (*map)[*]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
 World *init_world(const uint16_t height, const uint16_t width) {
@@ -23,27 +21,15 @@ World *init_world(const uint16_t height, const uint16_t width) {
     world_struct->length = height;
     world_struct->width = width;
 
-    char (*world)[width] = (char(*)[width]) world_struct->raw_table;
-    fill_world(height, width, *world);
-
-    return world_struct;
-}
-
-void fill_world(const uint16_t height, const uint16_t width, char map[height][width]) {
+    char (*world_map)[width] = (char(*)[width]) world_struct->raw_table;
     int row, column;
-    for(row = 0; row < height; row++) {
-        map[row][0] = '#';
-        map[row][width - 1] = '#';
-    }
-    for(column = 0; column < width; column++) {
-        map[0][column] = '#';
-        map[height - 1][column] = '#';
-    }
-    for (row = 1; row < height - 1; row++) {
-        for (column = 1; column < width - 1; column++) {
-            map[row][column] = ' ';
+    for (row = 0; row < height; row++) {
+        for (column = 0; column < width; column++) {
+            world_map[row][column] = ' ';
         }
     }
+
+    return world_struct;
 }
 
 Entity *init_entity(const World *world_struct, char character) {
@@ -52,8 +38,8 @@ Entity *init_entity(const World *world_struct, char character) {
     Position initial_position;
     do {
         initial_position = (Position) {
-            .x = rand_min_max(1, world_struct->width - 2),
-            .y = rand_min_max(1, world_struct->length - 2)
+            .x = rand_min_max(0, world_struct->width - 1),
+            .y = rand_min_max(0, world_struct->length - 1)
         };
     } while (world_map[initial_position.y][initial_position.x] != ' ');
 
