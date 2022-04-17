@@ -56,11 +56,11 @@ void new_game() {
 void render_visible(const World *world, Entity *player) {
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
-    WINDOW *gameplay_window = newwin(terminal_resolution.height - 2, terminal_resolution.width, 0, 0);
+    WINDOW *gameplay_window = newwin(terminal_resolution.height - 1, terminal_resolution.width, 0, 0);
     Resolution gameplay_resolution;
     getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
-    // Organizamos todas las subventanas dentro de la ventana principal, como si fuesen cajas
-    box(gameplay_window, 0, 0);
+
+    WINDOW *info_window = newwin(1, terminal_resolution.width, terminal_resolution.height - 1, 0);
 
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
     Position the_quadrant_we_are_in = {
@@ -84,7 +84,7 @@ void render_visible(const World *world, Entity *player) {
     //Fin de los cálculos
 
     wclear(gameplay_window);
-    clear();
+    wclear(info_window);
 
     uint16_t terminal_row = 0, terminal_column = 0, map_row, map_column;
     for (map_row = quadrant_start_point.y; map_row < quadrant_end_point.y; terminal_row++, map_row++) {
@@ -93,10 +93,7 @@ void render_visible(const World *world, Entity *player) {
             wprintw(gameplay_window, "%c", map[map_row][map_column]);
         }
     }
-    printw("P(%d, %d)", 
-            player->current_position.y, 
-            player->current_position.x
-    );
-    refresh();
+    wprintw(info_window, "P(%d, %d)", player->current_position.y, player->current_position.x);
     wrefresh(gameplay_window);
+    wrefresh(info_window);
 }
