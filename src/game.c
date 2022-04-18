@@ -82,13 +82,13 @@ void render_visible(const World *world, Entity *player, WINDOW *gameplay_window,
     //Fin de los cálculos
 
     wclear(info_window);
-
-    uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y, x;
-    for (gameplay_window_row = 1; gameplay_window_row < (gameplay_resolution.height - 1) && (gameplay_window_row < world->length); gameplay_window_row++) {
+    /* Para renderizar todo, usamos dos pares de contadores, los primeros son los contadores de la pantalla destinada
+       al gameplay (restandole los lados ocupados por el borde) y los últimos son los relativos al mapa del mundo.
+       Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. */
+    uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y = 1, x = 1;
+    for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row < (gameplay_resolution.height - 1) && (y < world->length); gameplay_window_row++, y++) {
         wmove(gameplay_window, gameplay_window_row, 1);
-        for (gameplay_window_column = 1; (gameplay_window_column < (gameplay_resolution.width - 1)) && (gameplay_window_column < world->width); gameplay_window_column++) {
-            y = quadrant_start_point.y + gameplay_window_row - 1;
-            x = quadrant_start_point.x + gameplay_window_column - 1;
+        for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column < (gameplay_resolution.width - 1)) && (x < world->width); gameplay_window_column++, x++) {
             waddch(gameplay_window, map[y][x]);
         }
     }
