@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <wchar.h>
 
 typedef struct {
     uint16_t x;
@@ -27,7 +28,7 @@ typedef struct {
     Position previous_position;
     char character;
 } Entity;
-Entity *init_entity(const World *world, char character);
+Entity *init_entity(const World *world, wchar_t character);
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world_struct);
 
 bool update_world(World *world_struct, Entity *entities[], uint16_t array_length);

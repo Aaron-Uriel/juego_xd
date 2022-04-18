@@ -1,3 +1,5 @@
+#include <wchar.h>
+
 #include "ncurses_utils.h"
 
 void draw_window_borders(WINDOW *window) {
@@ -5,10 +7,10 @@ void draw_window_borders(WINDOW *window) {
     getmaxyx(window, height, width);
 
     // Bordes
-    mvwprintw(window, 0, 0, u8"┏");
-    mvwprintw(window, height - 1, 0, u8"┗");
-    mvwprintw(window, 0, width - 1, u8"┓");
-    mvwprintw(window, height - 1, width - 1, u8"┛");
+    mvwaddstr(window, 0, 0, u8"┏");
+    mvwaddstr(window, height - 1, 0, u8"┗");
+    mvwaddstr(window, 0, width - 1, u8"┓");
+    mvwaddstr(window, height - 1, width - 1, u8"┛");
 
     // Lados
     uint32_t i;

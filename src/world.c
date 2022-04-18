@@ -32,7 +32,7 @@ World *init_world(const uint16_t height, const uint16_t width) {
     return world_struct;
 }
 
-Entity *init_entity(const World *world_struct, char character) {
+Entity *init_entity(const World *world_struct, wchar_t character) {
     char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->raw_table;
 
     Position initial_position;

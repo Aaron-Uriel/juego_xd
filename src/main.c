@@ -27,6 +27,7 @@ int main() {
     initscr();
     cbreak();
     noecho();
+    curs_set(FALSE);
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, terminal_resolution.height, terminal_resolution.width);
 
@@ -39,7 +40,7 @@ int main() {
     };
 
     char selected_option = 1, i;
-    bool is_option_selected, is_enter_pressed;
+    bool is_option_selected, is_enter_pressed = false;
     int32_t input;
     do {
         clear();
@@ -63,10 +64,16 @@ int main() {
                     selected_option++;
                 }
                 break;
+            case '\n':
+                is_enter_pressed = true;
         }
-        is_enter_pressed = (input == '\n')? true: false;
-        if (is_enter_pressed && selected_option == NEW_GAME) {
-            new_game();
+        if (is_enter_pressed == false) {
+            continue;
+        }
+        switch (selected_option) {
+            case NEW_GAME:
+                new_game();
+                break;
         }
     } while(!(selected_option == 3 && is_enter_pressed == true));
 
