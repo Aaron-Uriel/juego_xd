@@ -50,7 +50,6 @@ int main() {
             is_option_selected = ((i + 1) == selected_option);
             printw("    %d.- %-20s%s\n", i + 1, option_list[i], (is_option_selected)? "[*]": "[ ]");
         }
-        refresh();
 
         input = getch();
         switch (input) {
@@ -70,5 +69,8 @@ int main() {
             new_game();
         }
     } while(!(selected_option == 3 && is_enter_pressed == true));
+
+    delwin(stdscr);
+    endwin();
     return 0;
 }

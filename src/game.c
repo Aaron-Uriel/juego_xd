@@ -7,8 +7,9 @@
 #include "game.h"
 #include "world.h"
 #include "resolution.h"
+#include "ncurses_utils.h"
 
-void render_visible(const World *world, Entity *player);
+void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window);
 bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
 void draw_window_borders(WINDOW *window);
 
@@ -16,6 +17,10 @@ void new_game() {
     World *world = init_world(100, 200);
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
 
+    WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
+    WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
+    keypad(gameplay_window, TRUE); 
+    
     char entities_limit = 64;
     Entity *player = init_entity(world, '*');
     Entity *entities[entities_limit];
@@ -25,13 +30,14 @@ void new_game() {
         entities[i] = init_entity(world, '.');
     }
 
+    draw_window_borders(gameplay_window);
 
     int32_t option;
     do {
         update_world(world, entities, entities_limit);
-        render_visible(world, player);
+        render_visible(world, player, gameplay_window, info_window);
 
-        option = getch();
+        option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
             case KEY_UP: case 'w':
@@ -54,21 +60,13 @@ void new_game() {
     } while(1);
 }
 
-void render_visible(const World *world, Entity *player) {
+void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window) {
     const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
     
     const int32_t border_thickness = 1;
-    const Resolution gameplay_resolution = {
-        .height = terminal_resolution.height,
-        .width = terminal_resolution.width * 0.70
-    };
-    const Resolution info_resolution = {
-        .height = terminal_resolution.height,
-        .width = terminal_resolution.width - gameplay_resolution.width
-    };
-
-    WINDOW *gameplay_window = newwin(gameplay_resolution.height, gameplay_resolution.width, 0, 0);
-    WINDOW *info_window = newwin(info_resolution.height, info_resolution.width, 0, gameplay_resolution.width);
+    Resolution gameplay_resolution, info_resolution;
+    getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
+    getmaxyx(info_window, info_resolution.height, info_resolution.width);
 
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
     Position the_quadrant_we_are_in = {
@@ -81,26 +79,17 @@ void render_visible(const World *world, Entity *player) {
         .x = (gameplay_resolution.width - (border_thickness * 2)) * the_quadrant_we_are_in.x
     };
 
-    Position quadrant_end_point = {
-        .y = quadrant_start_point.y + gameplay_resolution.height,
-        .x = quadrant_start_point.x + gameplay_resolution.width
-    };
-
-    if (quadrant_end_point.y > world->length) { quadrant_end_point.y = world->length; }
-    if (quadrant_end_point.x > world->width)  { quadrant_end_point.x = world->width; }
-
     //Fin de los cálculos
 
-    draw_window_borders(gameplay_window);
     wclear(info_window);
 
     uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y, x;
-    for (gameplay_window_row = 1; gameplay_window_row < (gameplay_resolution.height - 1) && (gameplay_window_row < quadrant_end_point.y); gameplay_window_row++) {
+    for (gameplay_window_row = 1; gameplay_window_row < (gameplay_resolution.height - 1) && (gameplay_window_row < world->length); gameplay_window_row++) {
         wmove(gameplay_window, gameplay_window_row, 1);
-        for (gameplay_window_column = 1; (gameplay_window_column < (gameplay_resolution.width - 1)) && (gameplay_window_column < quadrant_end_point.x); gameplay_window_column++) {
+        for (gameplay_window_column = 1; (gameplay_window_column < (gameplay_resolution.width - 1)) && (gameplay_window_column < world->width); gameplay_window_column++) {
             y = quadrant_start_point.y + gameplay_window_row - 1;
             x = quadrant_start_point.x + gameplay_window_column - 1;
-            wprintw(gameplay_window, "%c", map[y][x]);
+            waddch(gameplay_window, map[y][x]);
         }
     }
 
@@ -114,28 +103,6 @@ void render_visible(const World *world, Entity *player) {
                          gameplay_resolution.width
 
     );
-    wrefresh(gameplay_window);
     wrefresh(info_window);
 }
 
-void draw_window_borders(WINDOW *window) {
-    uint32_t height, width;
-    getmaxyx(window, height, width);
-
-    // Bordes
-    mvwprintw(window, 0, 0, u8"┏");
-    mvwprintw(window, height - 1, 0, u8"┗");
-    mvwprintw(window, 0, width - 1, u8"┓");
-    mvwprintw(window, height - 1, width - 1, u8"┛");
-
-    // Lados
-    uint32_t i;
-    for (i = 1; i < (height - 1); i++) {
-        mvwprintw(window, i, 0, u8"┃");
-        mvwprintw(window, i, width - 1, u8"┃");
-    }
-    for (i = 1; i < (width - 1); i++) {
-        mvwprintw(window, 0, i, u8"━");
-        mvwprintw(window, height - 1, i, u8"━");
-    }
-}
