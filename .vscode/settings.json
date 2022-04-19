@@ -5,6 +5,7 @@
     "C_Cpp.default.compilerPath": "/bin/gcc",
     "files.associations": {
         "game.h": "c",
-        "pseudoconio.h": "c"
+        "pseudoconio.h": "c",
+        "curses.h": "c"
     }
 }

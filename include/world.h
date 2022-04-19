@@ -14,7 +14,7 @@ typedef struct {
 typedef struct {
     uint16_t length;
     uint16_t width;
-    char raw_table[]; // No tocar directamente
+    wchar_t raw_table[]; // No tocar directamente
 } DynamicTable;
 DynamicTable *table_allocate(const uint16_t height, const uint16_t width);
 
@@ -26,7 +26,7 @@ World *init_world(const uint16_t height, const uint16_t width);
 typedef struct {
     Position current_position;
     Position previous_position;
-    char character;
+    wchar_t character;
 } Entity;
 Entity *init_entity(const World *world, wchar_t character);
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world_struct);

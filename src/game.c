@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
-
 #include <ncurses.h>
+#include <string.h>
 
 #include "game.h"
 #include "world.h"
@@ -16,19 +16,19 @@ void draw_window_borders(WINDOW *window);
 
 void new_game() {
     World *world = init_world(100, 200);
-    const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
+    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
 
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
     keypad(gameplay_window, TRUE); 
     
-    char entities_limit = 64;
-    Entity *player = init_entity(world, '*');
+    int entities_limit = 128;
+    Entity *player = init_entity(world, 0x0D9E);
     Entity *entities[entities_limit];
     entities[0] = player;
     int i;
     for (i = 1; i < entities_limit; i++) {
-        entities[i] = init_entity(world, '.');
+        entities[i] = init_entity(world, 0x0DA9);
     }
 
     draw_window_borders(gameplay_window);
@@ -62,7 +62,7 @@ void new_game() {
 }
 
 void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window) {
-    const char (*map)[world->width] = (char(*)[world->width]) world->raw_table;
+    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
     
     const int32_t border_thickness = 1;
     Resolution gameplay_resolution, info_resolution;
@@ -90,7 +90,7 @@ void render_visible(const World *world, Entity *player, WINDOW *gameplay_window,
     for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row < (gameplay_resolution.height - 1) && (y < world->length); gameplay_window_row++, y++) {
         wmove(gameplay_window, gameplay_window_row, 1);
         for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column < (gameplay_resolution.width - 1)) && (x < world->width); gameplay_window_column++, x++) {
-            waddch(gameplay_window, map[y][x]);
+            wprintw(gameplay_window, "%lc", map[y][x]);
         }
     }
 

@@ -7,10 +7,10 @@ void draw_window_borders(WINDOW *window) {
     getmaxyx(window, height, width);
 
     // Bordes
-    mvwaddstr(window, 0, 0, u8"┏");
-    mvwaddstr(window, height - 1, 0, u8"┗");
-    mvwaddstr(window, 0, width - 1, u8"┓");
-    mvwaddstr(window, height - 1, width - 1, u8"┛");
+    mvwaddstr(window, 0, 0, "┏");
+    mvwaddstr(window, height - 1, 0, "┗");
+    mvwaddstr(window, 0, width - 1, "┓");
+    mvwaddstr(window, height - 1, width - 1, "┛");
 
     // Lados
     uint32_t i;

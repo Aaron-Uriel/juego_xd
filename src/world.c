@@ -16,12 +16,12 @@
 int32_t rand_min_max(int32_t min, int32_t max);
 
 World *init_world(const uint16_t height, const uint16_t width) {
-    World *world_struct = calloc(1, sizeof (*world_struct) + sizeof(char[height][width]));//Cambiar
+    World *world_struct = calloc(1, sizeof (*world_struct) + sizeof(wchar_t[height][width]));//Cambiar
 
     world_struct->length = height;
     world_struct->width = width;
 
-    char (*world_map)[width] = (char(*)[width]) world_struct->raw_table;
+    wchar_t (*world_map)[width] = (wchar_t(*)[width]) world_struct->raw_table;
     int row, column;
     for (row = 0; row < height; row++) {
         for (column = 0; column < width; column++) {
@@ -33,7 +33,7 @@ World *init_world(const uint16_t height, const uint16_t width) {
 }
 
 Entity *init_entity(const World *world_struct, wchar_t character) {
-    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->raw_table;
+    wchar_t (*world_map)[world_struct->width] = (wchar_t(*)[world_struct->width]) world_struct->raw_table;
 
     Position initial_position;
     do {
@@ -59,7 +59,7 @@ Entity *init_entity(const World *world_struct, wchar_t character) {
 }
 
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world) {
-    char (*world_map)[world->width] = (char(*)[world->width]) world->raw_table;
+    wchar_t (*world_map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
 
     entity->previous_position = entity->current_position;
 
@@ -80,7 +80,7 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, E
 }
 
 bool update_world(World *world_struct, Entity *entities[], uint16_t entities_number) {
-    char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->raw_table;
+    wchar_t (*world_map)[world_struct->width] = (wchar_t(*)[world_struct->width]) world_struct->raw_table;
 
     int entity_index;
     Position entity_current_position, entity_previous_position;
