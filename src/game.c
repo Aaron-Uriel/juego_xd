@@ -11,7 +11,7 @@
 #include "resolution.h"
 #include "ncurses_utils.h"
 
-void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window);
+void render_visible(const World *world, Entity *entities[], WINDOW *gameplay_window, WINDOW *info_window);
 bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
 void draw_window_borders(WINDOW *window);
 
@@ -24,11 +24,10 @@ void new_game() {
     keypad(gameplay_window, TRUE); 
     
     int entities_limit = 128;
-    Entity *player = init_entity(world, 0x0D9E);
     Entity *entities[entities_limit];
-    entities[0] = player;
-    int i;
-    for (i = 1; i < entities_limit; i++) {
+    entities[0] = init_entity(world, 0x0D9E);
+    Entity * const player = entities[0];
+    for (int i = 1; i < entities_limit; i++) {
         entities[i] = init_entity(world, 0x0DA9);
     }
 
@@ -37,7 +36,7 @@ void new_game() {
     int32_t option;
     do {
         update_world(world, entities, entities_limit);
-        render_visible(world, player, gameplay_window, info_window);
+        render_visible(world, entities, gameplay_window, info_window);
 
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
         int8_t delta_x = 0, delta_y = 0;
@@ -62,8 +61,9 @@ void new_game() {
     } while(1);
 }
 
-void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window) {
+void render_visible(const World *world, Entity *entities[], WINDOW *gameplay_window, WINDOW *info_window) {
     const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
+    const Entity * const player = entities[0];
 
     const int32_t border_thickness = 1;
     Resolution gameplay_resolution, info_resolution;
