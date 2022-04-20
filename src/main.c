@@ -33,6 +33,12 @@ int main() {
 
     srand(time(NULL));
 
+    if (has_colors() == FALSE) {
+        endwin();
+        printf("Tu terminal no soporta colores\n");
+        exit(1);
+    }
+
     const char option_list[OPTION_LIMIT][20] = {
         "Nueva partida.",
         "Continuar partida.",

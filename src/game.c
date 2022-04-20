@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <ncurses.h>
 #include <string.h>
+
+#include <ncurses.h>
 
 #include "game.h"
 #include "world.h"
@@ -63,7 +64,7 @@ void new_game() {
 
 void render_visible(const World *world, Entity *player, WINDOW *gameplay_window, WINDOW *info_window) {
     const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
-    
+
     const int32_t border_thickness = 1;
     Resolution gameplay_resolution, info_resolution;
     getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
@@ -83,14 +84,25 @@ void render_visible(const World *world, Entity *player, WINDOW *gameplay_window,
     //Fin de los cálculos
 
     wclear(info_window);
-    /* Para renderizar todo, usamos dos pares de contadores, los primeros son los contadores de la pantalla destinada
-       al gameplay (restandole los lados ocupados por el borde) y los últimos son los relativos al mapa del mundo.
-       Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. */
+    /* 
+     * Para renderizar todo, usamos dos pares de contadores, los primeros son los contadores de la pantalla destinada
+     * al gameplay (restandole los lados ocupados por el borde) y los últimos son los relativos al mapa del mundo.
+     * Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. 
+     */
+    start_color();
+    use_default_colors();
+    init_pair(1, COLOR_RED, COLOR_BLACK);
     uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y = 1, x = 1;
     for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row < (gameplay_resolution.height - 1) && (y < world->length); gameplay_window_row++, y++) {
         wmove(gameplay_window, gameplay_window_row, 1);
         for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column < (gameplay_resolution.width - 1)) && (x < world->width); gameplay_window_column++, x++) {
+            if (player->current_position.y == y && player->current_position.x == x) {
+                wattron(gameplay_window, COLOR_PAIR(1));
+            }
             wprintw(gameplay_window, "%lc", map[y][x]);
+            if (player->current_position.y == y, player->current_position.x == x) {
+                wattroff(gameplay_window, COLOR_PAIR(1));
+            }
         }
     }
 
