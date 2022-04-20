@@ -8,6 +8,7 @@
 
 #include "game.h"
 #include "resolution.h"
+#include "colors.h"
 
 Resolution terminal_resolution = {
     .height = 22,
@@ -30,6 +31,9 @@ int main() {
     curs_set(FALSE);
     keypad(stdscr, TRUE);
     getmaxyx(stdscr, terminal_resolution.height, terminal_resolution.width);
+    start_color();
+    use_default_colors();
+    set_color_pairs();
 
     srand(time(NULL));
 

@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <wchar.h>
 
+#include "colors.h"
+
 typedef struct {
     uint16_t x;
     uint16_t y;
@@ -27,11 +29,10 @@ typedef struct {
     Position current_position;
     Position previous_position;
     wchar_t character;
+    Colors color;
 } Entity;
 Entity *init_entity(const World *world, wchar_t character);
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, Entity *entity, const World *world_struct);
-
-bool update_world(World *world_struct, Entity *entities[], uint16_t array_length);
 
 
 #endif

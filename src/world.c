@@ -54,6 +54,7 @@ Entity *init_entity(const World *world_struct, wchar_t character) {
         initial_position.y
     };
     entity->character = character;
+    entity->color = NO_COLOR;
 
     return entity;
 }
@@ -75,27 +76,6 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, E
     }
 
     entity->current_position = requested_new_position;
-
-    return 0;
-}
-
-bool update_world(World *world_struct, Entity *entities[], uint16_t entities_number) {
-    wchar_t (*world_map)[world_struct->width] = (wchar_t(*)[world_struct->width]) world_struct->raw_table;
-
-    int entity_index;
-    Position entity_current_position, entity_previous_position;
-    bool has_entity_moved;
-    for (entity_index = 0; entity_index < entities_number; entity_index++) {
-        entity_current_position = entities[entity_index]->current_position;
-        entity_previous_position = entities[entity_index]->previous_position;
-
-        world_map[entity_current_position.y][entity_current_position.x] = entities[entity_index]->character;
-
-        has_entity_moved = (entity_current_position.x != entity_previous_position.x) || (entity_current_position.y != entity_previous_position.y);
-        if (has_entity_moved) {
-            world_map[entity_previous_position.y][entity_previous_position.x] = ' ';
-        }
-    }
 
     return 0;
 }
