@@ -1,11 +1,11 @@
 #ifndef COLORS_H
 #define COLORS_H
 
-typedef enum {
+enum Colors {
     NO_COLOR,
     PLAYER,
     ENEMY
-} Colors;
+};
 
 void set_color_pairs();
 

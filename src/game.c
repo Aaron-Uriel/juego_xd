@@ -12,22 +12,21 @@
 #include "ncurses_utils.h"
 #include "colors.h"
 
-void render_visible(const World *world, Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window);
-bool player_move(uint16_t y, uint16_t x, Entity *player, World world);
+void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window);
 void draw_window_borders(WINDOW *window);
 
 void new_game() {
-    World *world = init_world(100, 200);
-    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
+    struct World *world = init_world(100, 200);
+    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
 
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
     keypad(gameplay_window, TRUE); 
     
     uint16_t entities_limit = 128;
-    Entity *entities[entities_limit];
+    struct Entity *entities[entities_limit];
     entities[0] = init_entity(world, 0x0D9E);
-    Entity * const player = entities[0];
+    struct Entity * const player = entities[0];
     player->color = PLAYER;
     for (int i = 1; i < entities_limit; i++) {
         entities[i] = init_entity(world, 0x0DA9);
@@ -62,9 +61,9 @@ void new_game() {
     } while(1);
 }
 
-void render_visible(const World *world, Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window) {
-    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_table;
-    const Entity * const player = entities[0];
+void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window) {
+    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
+    const struct Entity * const player = entities[0];
 
     const int32_t border_thickness = 1;
     Resolution gameplay_resolution, info_resolution;
@@ -76,8 +75,8 @@ void render_visible(const World *world, Entity *entities[], uint16_t entities_li
     gameplay_resolution.width -= border_thickness * 2;
 
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
-    static Position the_quadrant_we_are_in = {1000, 1000};
-    Position possible_new_quadrant = {
+    static struct Position the_quadrant_we_are_in = {1000, 1000};
+    struct Position possible_new_quadrant = {
         .y = player->current_position.y / gameplay_resolution.height,
         .x = player->current_position.x / gameplay_resolution.width
     };
@@ -87,7 +86,7 @@ void render_visible(const World *world, Entity *entities[], uint16_t entities_li
     }
 
 
-    static Position quadrant_start_point = {0, 0};
+    static struct Position quadrant_start_point = {0, 0};
     if (we_are_in_new_quadrant) {
         quadrant_start_point.y = gameplay_resolution.height * the_quadrant_we_are_in.y;
         quadrant_start_point.x = gameplay_resolution.width * the_quadrant_we_are_in.x;
@@ -113,7 +112,7 @@ void render_visible(const World *world, Entity *entities[], uint16_t entities_li
     }
     bool is_at_screen;
     bool is_at_screen_verticaly, is_at_screen_horizontaly;
-    Entity *current_entity;
+    struct Entity *current_entity;
     for (uint16_t i = 0; i < entities_limit; i++) {
         current_entity = entities[i];
         
