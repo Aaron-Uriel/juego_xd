@@ -13,19 +13,23 @@
  * Mas información en: https://stackoverflow.com/questions/54709981/how-to-initiliaze-a-dynamic-2d-array-inside-a-struct-in-c
  */
 
+uint8_t determine_entity_stack_position(struct Entity *stack[]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
-struct World *init_world(const uint16_t height, const uint16_t width) {
-    struct World *world = calloc(1, sizeof (*world) + sizeof(wchar_t[height][width]));//Cambiar
+struct World *init_world(const uint16_t length, const uint16_t width) {
+    struct World *world = calloc(1, sizeof (*world) + sizeof(struct TaggedCell[length][width])); // Se inicializa con 0s
 
-    world->length = height;
+    world->length = length;
     world->width = width;
 
-    wchar_t (*map)[width] = (wchar_t(*)[width]) world->raw_world;
+    struct TaggedCell (*cell_map)[width] = (struct TaggedCell(*)[width]) world->cells;
+    struct TaggedCell *cell;
     int row, column;
-    for (row = 0; row < height; row++) {
+    for (row = 0; row < length; row++) {
         for (column = 0; column < width; column++) {
-            map[row][column] = ' ';
+            cell = &cell_map[row][column];
+
+            cell->tag = ENTITY_STACK;
         }
     }
 
@@ -33,15 +37,18 @@ struct World *init_world(const uint16_t height, const uint16_t width) {
 }
 
 struct Entity *init_entity(const struct World *world, wchar_t character) {
-    wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
+    struct TaggedCell (*cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
 
+    struct TaggedCell *cell;
     struct Position initial_position;
     do {
         initial_position = (struct Position) {
             .x = rand_min_max(0, world->width - 1),
             .y = rand_min_max(0, world->length - 1)
         };
-    } while (map[initial_position.y][initial_position.x] != ' ');
+        
+        cell = &cell_map[initial_position.y][initial_position.x];
+    } while (cell->tag == CHARACTER);
 
     // Las posición actual y anterior son la misma al principio
     struct Entity *entity = malloc(sizeof(struct Entity));
@@ -55,12 +62,15 @@ struct Entity *init_entity(const struct World *world, wchar_t character) {
     };
     entity->character = character;
     entity->color = NO_COLOR;
+    entity->stack_index = determine_entity_stack_position(cell->cell.entity_stack);
+
+    cell->cell.entity_stack[entity->stack_index] = entity;
 
     return entity;
 }
 
 uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, struct Entity *entity, const struct World *world) {
-    wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
+    struct TaggedCell (*cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
 
     entity->previous_position = entity->current_position;
 
@@ -70,16 +80,34 @@ uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, s
     };
 
     bool is_out_of_bounds = (requested_new_position.x >= world->width) || (requested_new_position.y >= world->length);
-    bool is_over_something = (map[requested_new_position.y][requested_new_position.x] != ' ');
+    bool is_over_something = (cell_map[requested_new_position.y][requested_new_position.x].tag == CHARACTER);
     if (is_out_of_bounds || is_over_something) {
         return 1;
     }
 
     entity->current_position = requested_new_position;
 
+    // Quitamos la entidad de la celda en la que estaba
+    struct TaggedCell *cell = &cell_map[entity->previous_position.y][entity->previous_position.x];
+    cell->cell.entity_stack[entity->stack_index] = NULL;
+
+    // Y la ponemos en la nueva celda
+    cell = &cell_map[entity->current_position.y][entity->current_position.x];
+    entity->stack_index = determine_entity_stack_position(cell->cell.entity_stack);
+    cell->cell.entity_stack[entity->stack_index] = entity;
+
     return 0;
 }
 
 int32_t rand_min_max(int32_t min, int32_t max) {
     return (rand() % max) + min;
+}
+
+uint8_t determine_entity_stack_position(struct Entity *stack[]) {
+    for (uint8_t i = 0; i < ENTITY_STACK_INSIDE_CELL_LIMIT; i++) {
+        if (stack[i] == NULL) {
+            return i;
+        }
+    }
+    return 255;
 }

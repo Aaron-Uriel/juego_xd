@@ -17,7 +17,6 @@ void draw_window_borders(WINDOW *window);
 
 void new_game() {
     struct World *world = init_world(100, 200);
-    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
 
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
@@ -62,7 +61,7 @@ void new_game() {
 }
 
 void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window) {
-    const wchar_t (*map)[world->width] = (wchar_t(*)[world->width]) world->raw_world;
+    const struct TaggedCell (* const cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
     const struct Entity * const player = entities[0];
 
     const int32_t border_thickness = 1;
@@ -103,10 +102,12 @@ void render_visible(const struct World *world, struct Entity *entities[], uint16
         * Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. 
         */
 
+        const struct TaggedCell *cell;
         for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row <= (gameplay_resolution.height) && (y < world->length); gameplay_window_row++, y++) {
             wmove(gameplay_window, gameplay_window_row, 1);
             for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < world->width); gameplay_window_column++, x++) {
-                wprintw(gameplay_window, "%lc", map[y][x]);
+                cell = &cell_map[y][x];
+                wprintw(gameplay_window, "%lc", (cell->tag == CHARACTER)? cell->cell.character: ' ');
             }
         }
     }
@@ -143,11 +144,13 @@ void render_visible(const struct World *world, struct Entity *entities[], uint16
 
     wprintw(info_window, "P(%d, %d)\n"
                          "Gameplay alto %d\n"
-                         "Gameplay ancho %d\n",
+                         "Gameplay ancho %d\n"
+                         "Índice de posición del jugador %d",
                          player->current_position.y, 
                          player->current_position.x,
                          gameplay_resolution.height, 
-                         gameplay_resolution.width
+                         gameplay_resolution.width,
+                         player->stack_index
 
     );
     wrefresh(info_window);
