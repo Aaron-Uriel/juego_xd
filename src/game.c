@@ -12,7 +12,13 @@
 #include "ncurses_utils.h"
 #include "colors.h"
 
-void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window);
+enum GameElements {
+    GAMEPLAY,
+    INFORMATION,
+    GAME_ELEMENTS_LIMIT
+};
+
+void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *window_array[], const struct Resolution resolution_array[]);
 void draw_window_borders(WINDOW *window);
 
 void new_game() {
@@ -21,6 +27,13 @@ void new_game() {
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
     keypad(gameplay_window, TRUE); 
+
+    struct Resolution gameplay_resolution, info_resolution;
+    getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
+    getmaxyx(info_window, info_resolution.height, info_resolution.width);
+
+    WINDOW *window_array[] = {gameplay_window, info_window};
+    struct Resolution resolution_array[] = {gameplay_resolution, info_resolution};
     
     uint16_t entities_limit = 128;
     struct Entity *entities[entities_limit];
@@ -35,7 +48,7 @@ void new_game() {
 
     int32_t option;
     do {
-        render_visible(world, entities, entities_limit, gameplay_window, info_window);
+        render_visible(world, entities, entities_limit, window_array, resolution_array);
 
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
         int8_t delta_x = 0, delta_y = 0;
@@ -60,16 +73,17 @@ void new_game() {
     } while(1);
 }
 
-void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *gameplay_window, WINDOW *info_window) {
+void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *window_array[], const struct Resolution resolution_array[]) {
     const struct TaggedCell (* const cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
     const struct Entity * const player = entities[0];
 
-    const int32_t border_thickness = 1;
-    Resolution gameplay_resolution, info_resolution;
-    getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
-    getmaxyx(info_window, info_resolution.height, info_resolution.width);
+    WINDOW * const gameplay_window = window_array[GAMEPLAY];
+    struct Resolution gameplay_resolution = resolution_array[GAMEPLAY];
+    WINDOW * const info_window = window_array[INFORMATION];
+    struct Resolution info_resolution = resolution_array[INFORMATION];
 
-    // Le restamos los bordes a la resolución
+    // El área dónde podemos dibujar es la del gameplay menos los dos bordes
+    const int32_t border_thickness = 1;
     gameplay_resolution.height -= border_thickness * 2;
     gameplay_resolution.width -= border_thickness * 2;
 

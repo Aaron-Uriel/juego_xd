@@ -10,7 +10,7 @@
 #include "resolution.h"
 #include "colors.h"
 
-Resolution terminal_resolution = {
+struct Resolution terminal_resolution = {
     .height = 22,
     .width = 80
 };

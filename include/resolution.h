@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-typedef struct {
+struct Resolution {
     uint8_t height;
     uint8_t width;
-} Resolution;
-extern Resolution terminal_resolution;
+};
+extern struct Resolution terminal_resolution;
 void resolution_screen();
 
 #endif
