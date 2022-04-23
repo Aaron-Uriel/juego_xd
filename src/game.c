@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <string.h>
+#include <time.h>
 
 #include <ncurses.h>
-#include <unistd.h>
 
 #include "game.h"
 #include "world.h"
@@ -32,8 +32,11 @@ void new_game() {
     struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH];
     init_world(world);
 
-    WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
-    WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
+    WINDOW * const border_gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
+    WINDOW * const border_info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
+
+    WINDOW * const gameplay_window = newwin(terminal_resolution.height - 2, (terminal_resolution.width * 0.70) - 2, 1, 1);
+    WINDOW * const info_window = newwin(terminal_resolution.height - 2, (terminal_resolution.width * 0.30) - 2, 1, (terminal_resolution.width * 0.70) + 1);
     keypad(gameplay_window, TRUE); 
     nodelay(gameplay_window, TRUE);
 
@@ -52,15 +55,17 @@ void new_game() {
         entities[i] = init_entity(world, 0x0DA9);
     }
 
-    draw_window_borders(gameplay_window);
-    draw_window_borders(info_window);
+    draw_window_borders(border_gameplay_window);
+    draw_window_borders(border_info_window);
+    wrefresh(border_gameplay_window);
+    wrefresh(border_info_window);
 
     int32_t option;
     do {
         render_visible(world, entities, window_array, resolution_array);
 
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
-        usleep(10000); // Prevenimos el uso excesivo de CPU
+        nanosleep((const struct timespec[]){{0, 10000000L}}, NULL); // Prevenimos el uso excesivo de CPU
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
             case KEY_UP: case 'w':
@@ -95,11 +100,6 @@ void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct E
     WINDOW * const info_window = window_array[INFORMATION];
     struct Resolution info_resolution = resolution_array[INFORMATION];
 
-    // El área dónde podemos dibujar es la del gameplay menos los dos bordes
-    const int32_t border_thickness = 1;
-    gameplay_resolution.height -= border_thickness * 2;
-    gameplay_resolution.width -= border_thickness * 2;
-
     // Cálculos para ver de donde a donde se va a ver en situaciones normales (muy organizado y simple xd)
     static struct Position the_quadrant_we_are_in = {1000, 1000};
     struct Position possible_new_quadrant = {
@@ -120,8 +120,7 @@ void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct E
 
     //Fin de los cálculos
 
-    //wclear(info_window);
-    uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y = 1, x = 1;
+    uint16_t gameplay_window_row, gameplay_window_column, y, x;
     if (we_are_in_new_quadrant) {
         /* 
         * Para renderizar todo, usamos dos pares de contadores, los primeros son los contadores de la pantalla destinada
@@ -129,9 +128,9 @@ void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct E
         * Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. 
         */
         const struct TaggedCell *tagged_cell;
-        for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row <= (gameplay_resolution.height) && (y < WORLD_LENGTH); gameplay_window_row++, y++) {
-            wmove(gameplay_window, gameplay_window_row, 1);
-            for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < WORLD_WIDTH); gameplay_window_column++, x++) {
+        for (gameplay_window_row = 0, y = quadrant_start_point.y; gameplay_window_row <= (gameplay_resolution.height) && (y < WORLD_LENGTH); gameplay_window_row++, y++) {
+            wmove(gameplay_window, gameplay_window_row, 0);
+            for (gameplay_window_column = 0, x = quadrant_start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < WORLD_WIDTH); gameplay_window_column++, x++) {
                 tagged_cell = &world[y][x];
                 wprintw(gameplay_window, "%lc", (tagged_cell->tag == CHARACTER)? tagged_cell->cell.character: ' ');
             }
@@ -159,14 +158,14 @@ void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct E
              * Solo no se ejecuta cuando el jugador cambia de cuadrante, porque escribe el espacio sobre los bordes en ese caso.
              */
             if (!we_are_in_new_quadrant) {
-                gameplay_window_row = current_entity->previous_position.y - quadrant_start_point.y + border_thickness;
-                gameplay_window_column = current_entity->previous_position.x - quadrant_start_point.x + border_thickness;
+                gameplay_window_row = current_entity->previous_position.y - quadrant_start_point.y;
+                gameplay_window_column = current_entity->previous_position.x - quadrant_start_point.x;
                 mvwaddstr(gameplay_window, gameplay_window_row, gameplay_window_column, " ");
             }
 
             (current_entity->color != NO_COLOR)? wattron(gameplay_window, COLOR_PAIR(current_entity->color)): false;
-            gameplay_window_row = current_entity->current_position.y - quadrant_start_point.y + border_thickness;
-            gameplay_window_column = current_entity->current_position.x - quadrant_start_point.x + border_thickness;
+            gameplay_window_row = current_entity->current_position.y - quadrant_start_point.y;
+            gameplay_window_column = current_entity->current_position.x - quadrant_start_point.x;
             mvwprintw(gameplay_window, gameplay_window_row, gameplay_window_column, "%lc", current_entity->character);
             (current_entity->color != NO_COLOR)? wattroff(gameplay_window, COLOR_PAIR(current_entity->color)): false;
         }
