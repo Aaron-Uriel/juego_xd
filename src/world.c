@@ -60,6 +60,11 @@ struct Entity *init_entity(const struct World *world, wchar_t character) {
         initial_position.x,
         initial_position.y
     };
+    entity->position_change_request = (struct PositionChangeRequest) {
+        .is_requesting = false,
+        .delta_x = 0,
+        .delta_y = 0
+    };
     entity->character = character;
     entity->color = NO_COLOR;
     entity->stack_index = determine_entity_stack_position(cell->cell.entity_stack);
@@ -69,23 +74,43 @@ struct Entity *init_entity(const struct World *world, wchar_t character) {
     return entity;
 }
 
-uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, struct Entity *entity, const struct World *world) {
+uint8_t progresive_position_change(struct Entity *entity, const struct World *world) {
     struct TaggedCell (*cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
 
     entity->previous_position = entity->current_position;
 
-    const struct Position requested_new_position = {
-        .x = entity->current_position.x + delta_x,
-        .y = entity->current_position.y + delta_y
-    };
+    struct PositionChangeRequest *const change_request = &entity->position_change_request;
+    struct Position requested_closer_position = entity->current_position;
 
-    bool is_out_of_bounds = (requested_new_position.x >= world->width) || (requested_new_position.y >= world->length);
-    bool is_over_something = (cell_map[requested_new_position.y][requested_new_position.x].tag == CHARACTER);
+    if (change_request->delta_y > 0) {
+        requested_closer_position.y++;
+        change_request->delta_y--;
+    }
+    if (change_request->delta_y < 0) {
+        requested_closer_position.y--;
+        change_request->delta_y++;
+    }
+
+    if (change_request->delta_x > 0) {
+        requested_closer_position.x++;
+        change_request->delta_x--;
+    }
+    if (change_request->delta_x < 0) {
+        requested_closer_position.x--;
+        change_request->delta_x++;
+    }
+
+    if (change_request->delta_x == 0 || change_request->delta_y == 0) {
+        entity->position_change_request.is_requesting = false;
+    }
+
+    bool is_out_of_bounds = (requested_closer_position.x >= world->width) || (requested_closer_position.y >= world->length);
+    bool is_over_something = (cell_map[requested_closer_position.y][requested_closer_position.x].tag == CHARACTER);
     if (is_out_of_bounds || is_over_something) {
         return 1;
     }
 
-    entity->current_position = requested_new_position;
+    entity->current_position = requested_closer_position;
 
     // Quitamos la entidad de la celda en la que estaba
     struct TaggedCell *cell = &cell_map[entity->previous_position.y][entity->previous_position.x];

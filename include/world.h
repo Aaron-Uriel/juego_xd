@@ -17,15 +17,23 @@
  */
 
 #define ENTITY_STACK_INSIDE_CELL_LIMIT 10
+#define ENTITY_LIMIT 128
 
 struct Position {
     uint16_t x;
     uint16_t y;
 };
 
+struct PositionChangeRequest {
+    bool is_requesting;
+    int8_t delta_x;
+    int8_t delta_y;
+};
+
 struct Entity {
     struct Position current_position;
     struct Position previous_position;
+    struct PositionChangeRequest position_change_request;
     wchar_t character;
     enum Colors color;
     uint8_t stack_index;
@@ -54,7 +62,7 @@ struct World *init_world(const uint16_t length, const uint16_t width);
 struct Entity *init_entity(const struct World *world, wchar_t character);
 struct TaggedCell *get_world_map(struct World *world);
 
-uint8_t request_change_of_position(const int8_t delta_x, const int8_t delta_y, struct Entity *entity, const struct World *world_struct);
+uint8_t progresive_position_change(struct Entity *entity, const struct World *world);
 
 
 #endif

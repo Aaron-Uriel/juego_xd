@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <ncurses.h>
+#include <unistd.h>
 
 #include "game.h"
 #include "world.h"
@@ -18,7 +19,7 @@ enum GameElements {
     GAME_ELEMENTS_LIMIT
 };
 
-void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *window_array[], const struct Resolution resolution_array[]);
+void render_visible(const struct World *world, struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]);
 void draw_window_borders(WINDOW *window);
 
 void new_game() {
@@ -27,6 +28,7 @@ void new_game() {
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
     keypad(gameplay_window, TRUE); 
+    nodelay(gameplay_window, TRUE);
 
     struct Resolution gameplay_resolution, info_resolution;
     getmaxyx(gameplay_window, gameplay_resolution.height, gameplay_resolution.width);
@@ -35,12 +37,11 @@ void new_game() {
     WINDOW *window_array[] = {gameplay_window, info_window};
     struct Resolution resolution_array[] = {gameplay_resolution, info_resolution};
     
-    uint16_t entities_limit = 128;
-    struct Entity *entities[entities_limit];
+    struct Entity *entities[ENTITY_LIMIT];
     entities[0] = init_entity(world, 0x0D9E);
     struct Entity * const player = entities[0];
     player->color = PLAYER;
-    for (int i = 1; i < entities_limit; i++) {
+    for (int i = 1; i < ENTITY_LIMIT; i++) {
         entities[i] = init_entity(world, 0x0DA9);
     }
 
@@ -48,9 +49,10 @@ void new_game() {
 
     int32_t option;
     do {
-        render_visible(world, entities, entities_limit, window_array, resolution_array);
+        render_visible(world, entities, window_array, resolution_array);
 
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
+        usleep(10000); // Prevenimos el uso excesivo de CPU
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
             case KEY_UP: case 'w':
@@ -69,11 +71,15 @@ void new_game() {
                 endwin();
                 exit(0);
         }
-        request_change_of_position(delta_x, delta_y, player, world);
+        player->position_change_request = (struct PositionChangeRequest) {
+            .is_requesting = true,
+            .delta_x = delta_x,
+            .delta_y = delta_y
+        };
     } while(1);
 }
 
-void render_visible(const struct World *world, struct Entity *entities[], uint16_t entities_limit, WINDOW *window_array[], const struct Resolution resolution_array[]) {
+void render_visible(const struct World *world, struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]) {
     const struct TaggedCell (* const cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
     const struct Entity * const player = entities[0];
 
@@ -107,7 +113,7 @@ void render_visible(const struct World *world, struct Entity *entities[], uint16
 
     //Fin de los cálculos
 
-    wclear(info_window);
+    //wclear(info_window);
     uint16_t gameplay_window_row = 1, gameplay_window_column = 1, y = 1, x = 1;
     if (we_are_in_new_quadrant) {
         /* 
@@ -125,12 +131,17 @@ void render_visible(const struct World *world, struct Entity *entities[], uint16
             }
         }
     }
-    bool is_at_screen;
+    bool is_at_screen, is_requesting_position_change;
     bool is_at_screen_verticaly, is_at_screen_horizontaly;
     struct Entity *current_entity;
-    for (uint16_t i = 0; i < entities_limit; i++) {
+    for (uint16_t i = 0; i < ENTITY_LIMIT; i++) {
         current_entity = entities[i];
         
+        is_requesting_position_change = current_entity->position_change_request.is_requesting;
+        if (is_requesting_position_change) {
+            progresive_position_change(current_entity, world);
+        }
+
         is_at_screen_verticaly = (current_entity->current_position.y >= quadrant_start_point.y) && (current_entity->current_position.y < (quadrant_start_point.y + gameplay_resolution.height));
         is_at_screen_horizontaly = (current_entity->current_position.x >= quadrant_start_point.x) && (current_entity->current_position.x < (quadrant_start_point.x + gameplay_resolution.width));
         
@@ -155,7 +166,7 @@ void render_visible(const struct World *world, struct Entity *entities[], uint16
         }
     }
 
-
+    wmove(info_window, 0, 0);
     wprintw(info_window, "P(%d, %d)\n"
                          "Gameplay alto %d\n"
                          "Gameplay ancho %d\n"
