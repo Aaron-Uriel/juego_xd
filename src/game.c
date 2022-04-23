@@ -19,11 +19,18 @@ enum GameElements {
     GAME_ELEMENTS_LIMIT
 };
 
-void render_visible(const struct World *world, struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]);
+void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]);
 void draw_window_borders(WINDOW *window);
 
 void new_game() {
-    struct World *world = init_world(100, 200);
+    /*
+     * ¿Cómo funciona el mundo?
+     * El mundo es un arreglo bidimensional de casillas etiquetadas (o sea una tabla)
+     * La etiqueta en la casilla nos permite saber si esta guarda un caracter (como un bloque o algo que asemeje una puerta)
+     * o si guarda un arreglo de entidades (el cual nos va a decir cuales y cuantas son las entidades sobre tal casilla).
+     */
+    struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH];
+    init_world(world);
 
     WINDOW *gameplay_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.70, 0, 0);
     WINDOW *info_window = newwin(terminal_resolution.height, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
@@ -46,6 +53,7 @@ void new_game() {
     }
 
     draw_window_borders(gameplay_window);
+    draw_window_borders(info_window);
 
     int32_t option;
     do {
@@ -79,8 +87,7 @@ void new_game() {
     } while(1);
 }
 
-void render_visible(const struct World *world, struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]) {
-    const struct TaggedCell (* const cell_map)[world->width] = (struct TaggedCell(*)[world->width]) world->cells;
+void render_visible(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], struct Entity *entities[], WINDOW *window_array[], const struct Resolution resolution_array[]) {
     const struct Entity * const player = entities[0];
 
     WINDOW * const gameplay_window = window_array[GAMEPLAY];
@@ -121,13 +128,12 @@ void render_visible(const struct World *world, struct Entity *entities[], WINDOW
         * al gameplay (restandole los lados ocupados por el borde) y los últimos son los relativos al mapa del mundo.
         * Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. 
         */
-
-        const struct TaggedCell *cell;
-        for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row <= (gameplay_resolution.height) && (y < world->length); gameplay_window_row++, y++) {
+        const struct TaggedCell *tagged_cell;
+        for (gameplay_window_row = 1, y = quadrant_start_point.y; gameplay_window_row <= (gameplay_resolution.height) && (y < WORLD_LENGTH); gameplay_window_row++, y++) {
             wmove(gameplay_window, gameplay_window_row, 1);
-            for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < world->width); gameplay_window_column++, x++) {
-                cell = &cell_map[y][x];
-                wprintw(gameplay_window, "%lc", (cell->tag == CHARACTER)? cell->cell.character: ' ');
+            for (gameplay_window_column = 1, x = quadrant_start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < WORLD_WIDTH); gameplay_window_column++, x++) {
+                tagged_cell = &world[y][x];
+                wprintw(gameplay_window, "%lc", (tagged_cell->tag == CHARACTER)? tagged_cell->cell.character: ' ');
             }
         }
     }

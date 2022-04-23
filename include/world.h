@@ -16,8 +16,12 @@
  * Las celdas que son arreglos de punteros de entidades, son las partes donde podrán andar las entidades.
  */
 
-#define ENTITY_STACK_INSIDE_CELL_LIMIT 10
-#define ENTITY_LIMIT 128
+enum Limits {
+    WORLD_LENGTH = 100,
+    WORLD_WIDTH = 200,
+    ENTITY_STACK_INSIDE_CELL_LIMIT = 10,
+    ENTITY_LIMIT = 128
+};
 
 struct Position {
     uint16_t x;
@@ -50,19 +54,10 @@ struct TaggedCell {
     union Cell cell;
 };
 
+void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
+struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
 
-struct World {
-    uint16_t length;
-    uint16_t width;
-    struct TaggedCell cells[];
-};
-
-struct World *world_allocate(const uint16_t length, const uint16_t width);
-struct World *init_world(const uint16_t length, const uint16_t width);
-struct Entity *init_entity(const struct World *world, wchar_t character);
-struct TaggedCell *get_world_map(struct World *world);
-
-uint8_t progresive_position_change(struct Entity *entity, const struct World *world);
+uint8_t progresive_position_change(struct Entity *entity, struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
 
 
 #endif
