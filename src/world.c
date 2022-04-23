@@ -6,13 +6,6 @@
 
 #include "world.h"
 
-/*
- * Para obener correctamente el mapa desde la estructura world, necesitamos:
- * char (*world_map)[world_struct->width] = (char(*)[world_struct->width]) world_struct->world_ptr;
- * O similar.
- * Mas información en: https://stackoverflow.com/questions/54709981/how-to-initiliaze-a-dynamic-2d-array-inside-a-struct-in-c
- */
-
 uint8_t determine_entity_stack_position(struct Entity *stack[]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
