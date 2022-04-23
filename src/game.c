@@ -10,7 +10,7 @@
 #include "game.h"
 #include "world.h"
 #include "resolution.h"
-#include "ncurses_utils.h"
+#include "utils.h"
 #include "colors.h"
 
 enum GameElements {
@@ -65,7 +65,7 @@ void new_game() {
         render_visible(world, entities, window_array, resolution_array);
 
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
-        nanosleep((const struct timespec[]){{0, 10000000L}}, NULL); // Prevenimos el uso excesivo de CPU
+        msleep(10); // Prevenimos el uso excesivo de CPU
         int8_t delta_x = 0, delta_y = 0;
         switch (option) {
             case KEY_UP: case 'w':

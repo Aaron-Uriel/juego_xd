@@ -1,6 +1,7 @@
 #include <wchar.h>
+#include <time.h>
 
-#include "ncurses_utils.h"
+#include "utils.h"
 
 void draw_window_borders(WINDOW *window) {
     uint32_t height, width;
@@ -22,4 +23,13 @@ void draw_window_borders(WINDOW *window) {
         mvwprintw(window, 0, i, u8"━");
         mvwprintw(window, height - 1, i, u8"━");
     }
+}
+
+int msleep(uint64_t msec) {
+    struct timespec req = {
+        0,
+        msec * 1000000
+    };
+
+    return nanosleep(&req, &req);
 }
