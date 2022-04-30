@@ -73,12 +73,19 @@ void new_game() {
         option = wgetch(gameplay_window); // Incluye un wrefresh(gameplay_window) implícitamente
         msleep(10); // Prevenimos el uso excesivo de CPU
 
-        /*
-         * Cuando el jugador no presiona ninguna tecla hacemos los movimientos de los enemigos.
-         */
+        // Cuando el jugador no presiona ninguna tecla hacemos los movimientos de los enemigos.
         if (option == ERR) {
             continue;
         }
+
+        // Casos de teclas que no implican movimiento (o sea, los casos genéricos)
+        switch (option) {
+            case 'q':
+                endwin();
+                exit(0);
+                break;
+        }
+
         /*
          * Si el jugador presiona las teclas de movimiento (wasd o las flechas),
          * creamos una petición para cambiar su posición con struct PositionChangeRequest.
@@ -150,15 +157,15 @@ void handle_all_position_change_requests(struct TaggedCell world[WORLD_LENGTH][W
         if (is_free_space) {
             continue;
         }
-        bool entity_position_was_changed_succesfully = try_to_update_entity_position(current_position_change_request, world);
-        if (entity_position_was_changed_succesfully) {
+        bool return_status = try_to_update_entity_position(current_position_change_request, world);
+        if (return_status == EXIT_SUCCESS) {
             // Quitamos la entidad de la celda en la que estaba
             struct TaggedCell *cell = &world[entity->previous_position.y][entity->previous_position.x];
-            remove_entity_from_stack(entity, cell->cell.entity_stack);
+            remove_entity_from_cell_stack(entity, cell);
 
             // Y la ponemos en la nueva celda
             cell = &world[entity->current_position.y][entity->current_position.x];
-            add_entity_to_stack(entity, cell->cell.entity_stack);
+            add_entity_to_cell_stack(entity, cell);
         }
 
         current_position_change_request->requesting_entity = NULL;
@@ -266,13 +273,4 @@ bool add_position_request_to_stack(struct PositionChangeRequest request, struct 
     stack[stack_position] = request;
 
     return 0;
-}
-
-uint8_t determine_entity_stack_position(struct Entity *stack[]) {
-    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
-        if (stack[i] == NULL) {
-            return i;
-        }
-    }
-    return 255;
 }

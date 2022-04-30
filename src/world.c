@@ -50,7 +50,7 @@ struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], w
     entity->character = character;
     entity->color = NO_COLOR;
 
-    bool return_status = add_entity_to_stack(entity, tagged_cell->cell.entity_stack);
+    bool return_status = add_entity_to_cell_stack(entity, tagged_cell);
     if (return_status == EXIT_FAILURE) {
         fprintf(stderr, "Error crítico ocurrido: La entidad no pudo inicializarse");
         exit(EXIT_FAILURE);
@@ -59,25 +59,29 @@ struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], w
     return entity;
 }
 
-bool add_entity_to_stack(struct Entity * const entity, struct Entity *stack[STACK_LIMIT]) {
-    uint8_t position = UNINITIALIZED_8;
-    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
-        if (stack[i] == NULL) {
-            position = i;
-        }
-    }
-    if (position == UNINITIALIZED_8) { return EXIT_FAILURE; }
-    stack[position] = entity;
-
-    return EXIT_SUCCESS;
-}
-
-bool remove_entity_from_stack(struct Entity * const entity, struct Entity *stack[STACK_LIMIT]) {
-    const bool its_not_the_same_entity = stack[entity->stack_index] != entity;
-    if (its_not_the_same_entity) {
+bool add_entity_to_cell_stack(struct Entity * const entity, struct TaggedCell *cell) {
+    if (cell->tag != ENTITY_STACK) {
         return EXIT_FAILURE;
     }
 
-    stack[entity->stack_index] = NULL;
+    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
+        if (cell->cell.entity_stack[i] == NULL) {
+            entity->stack_index = i;
+            cell->cell.entity_stack[i] = entity;
+            return EXIT_SUCCESS;
+        }
+    }
+
+    return EXIT_FAILURE;
+}
+
+bool remove_entity_from_cell_stack(struct Entity * const entity, struct TaggedCell *cell) {
+    const bool its_not_the_same_entity = cell->cell.entity_stack[entity->stack_index] != entity;
+    const bool its_not_an_entity_stack = cell->tag != ENTITY_STACK;
+    if (its_not_the_same_entity || its_not_an_entity_stack) {
+        return EXIT_FAILURE;
+    }
+
+    cell->cell.entity_stack[entity->stack_index] = NULL;
     return EXIT_SUCCESS;
 }

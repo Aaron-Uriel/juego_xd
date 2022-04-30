@@ -60,9 +60,8 @@ struct TaggedCell {
 void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
 struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
 
-uint8_t progresive_position_change(struct Entity *entity, struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
-bool add_entity_to_stack(struct Entity * const,struct Entity *[STACK_LIMIT]);
-bool remove_entity_from_stack(struct Entity * const, struct Entity *[STACK_LIMIT]);
+bool add_entity_to_cell_stack(struct Entity * const, struct TaggedCell *cell);
+bool remove_entity_from_cell_stack(struct Entity * const, struct TaggedCell *cell);
 
 
 #endif
