@@ -16,11 +16,13 @@
  * Las celdas que son arreglos de punteros de entidades, son las partes donde podrán andar las entidades.
  */
 
-enum Limits {
+enum Constants {
     WORLD_LENGTH = 100,
     WORLD_WIDTH = 200,
-    ENTITY_STACK_INSIDE_CELL_LIMIT = 10,
-    ENTITY_LIMIT = 128
+    STACK_LIMIT = 10,
+    ENTITY_LIMIT = 128,
+    UNINITIALIZED_8 = UINT8_MAX,
+    UNINITIALIZED_32 = UINT32_MAX
 };
 
 struct Position {
@@ -28,24 +30,25 @@ struct Position {
     uint16_t y;
 };
 
-struct PositionChangeRequest {
-    bool is_requesting;
-    int8_t delta_x;
-    int8_t delta_y;
-};
-
 struct Entity {
     struct Position current_position;
     struct Position previous_position;
-    struct PositionChangeRequest position_change_request;
     wchar_t character;
     enum Colors color;
     uint8_t stack_index;
 };
 
+enum Axis {Y_AXIS, X_AXIS};
+enum PositionDelta {NEGATIVE, POSITIVE};
+struct PositionChangeRequest {
+    struct Entity *requesting_entity;
+    enum Axis axis;
+    enum PositionDelta delta;
+};
+
 union Cell {
     wchar_t character;
-    struct Entity *entity_stack[ENTITY_STACK_INSIDE_CELL_LIMIT];
+    struct Entity *entity_stack[STACK_LIMIT];
 };
 
 enum CellTag { CHARACTER, ENTITY_STACK };
@@ -58,6 +61,8 @@ void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
 struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
 
 uint8_t progresive_position_change(struct Entity *entity, struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
+bool add_entity_to_stack(struct Entity * const,struct Entity *[STACK_LIMIT]);
+bool remove_entity_from_stack(struct Entity * const, struct Entity *[STACK_LIMIT]);
 
 
 #endif

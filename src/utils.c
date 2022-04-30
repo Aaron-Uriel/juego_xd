@@ -1,5 +1,6 @@
 #include <wchar.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include "utils.h"
 
@@ -32,4 +33,8 @@ int msleep(uint64_t msec) {
     };
 
     return nanosleep(&req, &req);
+}
+
+uint32_t rand_min_max(uint32_t min, uint32_t max) {
+    return (rand() % max) + min;
 }

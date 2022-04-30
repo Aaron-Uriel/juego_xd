@@ -1,12 +1,12 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "world.h"
 
-uint8_t determine_entity_stack_position(struct Entity *stack[]);
 int32_t rand_min_max(int32_t min, int32_t max);
 
 void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]) {
@@ -17,7 +17,7 @@ void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]) {
             tagged_cell = &world[row][column];
 
             tagged_cell->tag = ENTITY_STACK;
-            for (i = 0; i < ENTITY_STACK_INSIDE_CELL_LIMIT; i++) {
+            for (i = 0; i < STACK_LIMIT; i++) {
                 tagged_cell->cell.entity_stack[i] = NULL;
             }
         }
@@ -47,77 +47,37 @@ struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], w
         initial_position.x,
         initial_position.y
     };
-    entity->position_change_request = (struct PositionChangeRequest) {
-        .is_requesting = false,
-        .delta_x = 0,
-        .delta_y = 0
-    };
     entity->character = character;
     entity->color = NO_COLOR;
-    entity->stack_index = determine_entity_stack_position(tagged_cell->cell.entity_stack);
 
-    tagged_cell->cell.entity_stack[entity->stack_index] = entity;
+    bool return_status = add_entity_to_stack(entity, tagged_cell->cell.entity_stack);
+    if (return_status == EXIT_FAILURE) {
+        fprintf(stderr, "Error crítico ocurrido: La entidad no pudo inicializarse");
+        exit(EXIT_FAILURE);
+    }
 
     return entity;
 }
 
-uint8_t progresive_position_change(struct Entity *entity, struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]) {
-    entity->previous_position = entity->current_position;
-
-    struct PositionChangeRequest *const change_request = &entity->position_change_request;
-    struct Position requested_closer_position = entity->current_position;
-
-    if (change_request->delta_y > 0) {
-        requested_closer_position.y++;
-        change_request->delta_y--;
-    }
-    if (change_request->delta_y < 0) {
-        requested_closer_position.y--;
-        change_request->delta_y++;
-    }
-
-    if (change_request->delta_x > 0) {
-        requested_closer_position.x++;
-        change_request->delta_x--;
-    }
-    if (change_request->delta_x < 0) {
-        requested_closer_position.x--;
-        change_request->delta_x++;
-    }
-
-    if (change_request->delta_x == 0 || change_request->delta_y == 0) {
-        entity->position_change_request.is_requesting = false;
-    }
-
-    bool is_out_of_bounds = (requested_closer_position.x >= WORLD_WIDTH) || (requested_closer_position.y >= WORLD_LENGTH);
-    bool is_over_something = (world[requested_closer_position.y][requested_closer_position.x].tag == CHARACTER);
-    if (is_out_of_bounds || is_over_something) {
-        return 1;
-    }
-
-    entity->current_position = requested_closer_position;
-
-    // Quitamos la entidad de la celda en la que estaba
-    struct TaggedCell *tagged_cell = &world[entity->previous_position.y][entity->previous_position.x];
-    tagged_cell->cell.entity_stack[entity->stack_index] = NULL;
-
-    // Y la ponemos en la nueva celda
-    tagged_cell = &world[entity->current_position.y][entity->current_position.x];
-    entity->stack_index = determine_entity_stack_position(tagged_cell->cell.entity_stack);
-    tagged_cell->cell.entity_stack[entity->stack_index] = entity;
-
-    return 0;
-}
-
-int32_t rand_min_max(int32_t min, int32_t max) {
-    return (rand() % max) + min;
-}
-
-uint8_t determine_entity_stack_position(struct Entity *stack[]) {
-    for (uint8_t i = 0; i < ENTITY_STACK_INSIDE_CELL_LIMIT; i++) {
+bool add_entity_to_stack(struct Entity * const entity, struct Entity *stack[STACK_LIMIT]) {
+    uint8_t position = UNINITIALIZED_8;
+    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
         if (stack[i] == NULL) {
-            return i;
+            position = i;
         }
     }
-    return 255;
+    if (position == UNINITIALIZED_8) { return EXIT_FAILURE; }
+    stack[position] = entity;
+
+    return EXIT_SUCCESS;
+}
+
+bool remove_entity_from_stack(struct Entity * const entity, struct Entity *stack[STACK_LIMIT]) {
+    const bool its_not_the_same_entity = stack[entity->stack_index] != entity;
+    if (its_not_the_same_entity) {
+        return EXIT_FAILURE;
+    }
+
+    stack[entity->stack_index] = NULL;
+    return EXIT_SUCCESS;
 }
