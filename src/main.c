@@ -9,17 +9,18 @@
 #include "game.h"
 #include "resolution.h"
 #include "colors.h"
+#include "utils.h"
 
 struct Resolution terminal_resolution = {
     .height = 22,
     .width = 80
 };
 
-#define OPTION_LIMIT 3
 enum Options {
-    NEW_GAME = 1,
-    CONTINUE_GAME = 2,
-    EXIT = 3
+    NEW_GAME,
+    CONTINUE_GAME,
+    EXIT,
+    OPTIONS_LIMIT
 };
 
 int main() {
@@ -29,7 +30,6 @@ int main() {
     cbreak();
     noecho();
     curs_set(FALSE);
-    keypad(stdscr, TRUE);
     getmaxyx(stdscr, terminal_resolution.height, terminal_resolution.width);
     start_color();
     use_default_colors();
@@ -43,51 +43,70 @@ int main() {
         exit(1);
     }
 
-    const char option_list[OPTION_LIMIT][20] = {
-        "Nueva partida.",
-        "Continuar partida.",
-        "Salir."
+    const struct Resolution menu_resolution = {
+        .height = OPTIONS_LIMIT,
+        .width  = 30
     };
+    const struct Point menu_start_point = {
+        .y = (terminal_resolution.height / 2) - (menu_resolution.height/2),
+        .x = (terminal_resolution.width / 2)  - (menu_resolution.width/2)
+    };
+    WINDOW * const menu_border_window = newwin(menu_resolution.height+2, menu_resolution.width+2, menu_start_point.y-1, menu_start_point.x-1);
+    WINDOW * const menu_window        = newwin(menu_resolution.height,   menu_resolution.width,   menu_start_point.y,   menu_start_point.x);
+    keypad(menu_window, TRUE);
 
-    char selected_option = 1, i;
-    bool is_option_selected, is_enter_pressed = false;
+    const uint8_t title_center = (terminal_resolution.width/2) - (67/2);
+    mvprintw(1, title_center, "     ██╗██╗   ██╗███████╗ ██████╗  ██████╗         ██╗  ██╗██████╗ ");
+    mvprintw(2, title_center, "     ██║██║   ██║██╔════╝██╔════╝ ██╔═══██╗        ╚██╗██╔╝██╔══██╗");
+    mvprintw(3, title_center, "     ██║██║   ██║█████╗  ██║  ███╗██║   ██║         ╚███╔╝ ██║  ██║");
+    mvprintw(4, title_center, "██   ██║██║   ██║██╔══╝  ██║   ██║██║   ██║         ██╔██╗ ██║  ██║");
+    mvprintw(5, title_center, "╚█████╔╝╚██████╔╝███████╗╚██████╔╝╚██████╔╝███████╗██╔╝ ██╗██████╔╝");
+    mvprintw(6, title_center, " ╚════╝  ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝ ");
+    refresh();
+
+    draw_window_borders(menu_border_window);
+    wrefresh(menu_border_window);
+
+    uint8_t selected_option = 0;
+    bool is_enter_pressed = false;
     int32_t input;
     do {
-        clear();
-        printw("Bienvenido al juego xd.\n"
-               u8"¿Qué desea hacer?:\n");
+        mvwprintw(menu_window, NEW_GAME,      0, "1.- %-18s [ ]", "Nuevo juego.");
+        mvwprintw(menu_window, CONTINUE_GAME, 0, "2.- %-18s [ ]", "Continuar juego.");
+        mvwprintw(menu_window, EXIT,          0, "3.- %-18s [ ]", "Salir.");
 
-        for (i = 0; i < OPTION_LIMIT; ++i) {
-            is_option_selected = ((i + 1) == selected_option);
-            printw("    %d.- %-20s%s\n", i + 1, option_list[i], (is_option_selected)? "[*]": "[ ]");
-        }
+        mvwaddch(menu_window, selected_option, 24, '*');
 
-        input = getch();
+        input = wgetch(menu_window);
+        mvwaddch(menu_window, selected_option, 24, ' ');
         switch (input) {
             case KEY_UP: case 'w':
-                if (selected_option > 1) {
+                if ((selected_option - 1) > -1) {
                     selected_option--;
                 }
                 break;
             case KEY_DOWN: case 's':
-                if (selected_option < 3) {
+                if ((selected_option + 1) < OPTIONS_LIMIT) {
                     selected_option++;
                 }
                 break;
             case '\n':
                 is_enter_pressed = true;
         }
-        if (is_enter_pressed == false) {
-            continue;
-        }
-        switch (selected_option) {
-            case NEW_GAME:
-                new_game();
-                break;
-        }
-    } while(!(selected_option == 3 && is_enter_pressed == true));
+        if (is_enter_pressed == true) {
+            switch (selected_option) {
+                case NEW_GAME:
+                    new_game();
+                    break;
 
-    delwin(stdscr);
-    endwin();
+                case EXIT:
+                    delwin(menu_border_window);
+                    delwin(menu_window);
+                    endwin();
+                    return 0;
+            }
+        }
+    } while(true);
+
     return 0;
 }
