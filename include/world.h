@@ -7,6 +7,7 @@
 #include <wchar.h>
 
 #include "colors.h"
+#include "resolution.h"
 
 /*
  * Explicación de la lógica del mundo.
@@ -19,9 +20,10 @@
 enum Constants {
     WORLD_LENGTH = 100,
     WORLD_WIDTH = 200,
-    STACK_LIMIT = 10,
+    STACK_LIMIT = 20,
     ENTITY_LIMIT = 128,
     UNINITIALIZED_8 = UINT8_MAX,
+    UNINITIALIZED_16 = UINT16_MAX,
     UNINITIALIZED_32 = UINT32_MAX
 };
 
@@ -41,27 +43,48 @@ struct Entity {
 enum Axis {Y_AXIS, X_AXIS};
 enum PositionDelta {NEGATIVE, POSITIVE};
 struct PositionChangeRequest {
-    struct Entity *requesting_entity;
     enum Axis axis;
     enum PositionDelta delta;
 };
 
-union Cell {
+union InternalRequest {
+    struct PositionChangeRequest position_change_request;
+};
+
+enum RequestKind { POSITION_REQUEST, ATTACK_REQUEST };
+struct EntityRequest {
+    struct Entity *requesting_entity;
+    enum RequestKind kind;
+    union InternalRequest request;
+};
+
+union InternalCell {
     wchar_t character;
     struct Entity *entity_stack[STACK_LIMIT];
 };
 
-enum CellTag { CHARACTER, ENTITY_STACK };
-struct TaggedCell {
-    enum CellTag tag;
-    union Cell cell;
+enum CellKind { CHARACTER, ENTITY_STACK };
+struct Cell {
+    enum CellKind tag;
+    union InternalCell cell;
 };
 
-void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]);
-struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
+struct VisibleWorld {
+    struct Cell (*world)[WORLD_WIDTH];
+    struct Position quadrant;
+    bool is_new_quadrant;
+    struct Position start_point;
+    struct Position end_point;
+    struct Entity *visible_entities[STACK_LIMIT];
+    struct EntityRequest requests_stack[STACK_LIMIT];
+};
 
-bool add_entity_to_cell_stack(struct Entity * const, struct TaggedCell *cell);
-bool remove_entity_from_cell_stack(struct Entity * const, struct TaggedCell *cell);
+void init_world(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
+void init_visible_world(struct VisibleWorld *, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
+struct Entity *init_entity(struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
+
+bool add_entity_to_cell_stack(struct Entity * const, struct Cell *cell);
+bool remove_entity_from_cell_stack(struct Entity * const, struct Cell *cell);
 
 
 #endif

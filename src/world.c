@@ -9,8 +9,8 @@
 
 int32_t rand_min_max(int32_t min, int32_t max);
 
-void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]) {
-    struct TaggedCell *tagged_cell;
+void init_world(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]) {
+    struct Cell *tagged_cell;
     uint16_t row, column, i;
     for (row = 0; row < WORLD_LENGTH; row++) {
         for (column = 0; column < WORLD_WIDTH; column++) {
@@ -24,9 +24,18 @@ void init_world(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH]) {
     }
 }
 
-struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character) {
+void init_visible_world(struct VisibleWorld *visible_world, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]) {
+    visible_world->world = world;
 
-    struct TaggedCell *tagged_cell;
+    visible_world->quadrant.y = UNINITIALIZED_16;
+    visible_world->quadrant.x = UNINITIALIZED_16;
+
+    visible_world->is_new_quadrant = true;
+}
+
+struct Entity *init_entity(struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character) {
+
+    struct Cell *tagged_cell;
     struct Position initial_position;
     do {
         initial_position = (struct Position) {
@@ -39,14 +48,9 @@ struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], w
 
     // Las posición actual y anterior son la misma al principio
     struct Entity *entity = malloc(sizeof(struct Entity));
-    entity->current_position = (struct Position) {
-        initial_position.x,
-        initial_position.y
-    };
-    entity->previous_position = (struct Position) {
-        initial_position.x,
-        initial_position.y
-    };
+    entity->current_position.x = initial_position.x;
+    entity->current_position.y = initial_position.y;
+    entity->previous_position = entity->current_position;
     entity->character = character;
     entity->color = NO_COLOR;
 
@@ -59,7 +63,7 @@ struct Entity *init_entity(struct TaggedCell world[WORLD_LENGTH][WORLD_WIDTH], w
     return entity;
 }
 
-bool add_entity_to_cell_stack(struct Entity * const entity, struct TaggedCell *cell) {
+bool add_entity_to_cell_stack(struct Entity * const entity, struct Cell *cell) {
     if (cell->tag != ENTITY_STACK) {
         return EXIT_FAILURE;
     }
@@ -75,7 +79,7 @@ bool add_entity_to_cell_stack(struct Entity * const entity, struct TaggedCell *c
     return EXIT_FAILURE;
 }
 
-bool remove_entity_from_cell_stack(struct Entity * const entity, struct TaggedCell *cell) {
+bool remove_entity_from_cell_stack(struct Entity * const entity, struct Cell *cell) {
     const bool its_not_the_same_entity = cell->cell.entity_stack[entity->stack_index] != entity;
     const bool its_not_an_entity_stack = cell->tag != ENTITY_STACK;
     if (its_not_the_same_entity || its_not_an_entity_stack) {

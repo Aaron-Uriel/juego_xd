@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 struct Resolution {
-    uint8_t height;
+    uint8_t length;
     uint8_t width;
 };
 extern struct Resolution terminal_resolution;

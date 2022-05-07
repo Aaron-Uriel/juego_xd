@@ -12,7 +12,7 @@
 #include "utils.h"
 
 struct Resolution terminal_resolution = {
-    .height = 22,
+    .length = 22,
     .width = 80
 };
 
@@ -30,7 +30,7 @@ int main() {
     cbreak();
     noecho();
     curs_set(FALSE);
-    getmaxyx(stdscr, terminal_resolution.height, terminal_resolution.width);
+    getmaxyx(stdscr, terminal_resolution.length, terminal_resolution.width);
     start_color();
     use_default_colors();
     set_color_pairs();
@@ -44,15 +44,15 @@ int main() {
     }
 
     const struct Resolution menu_resolution = {
-        .height = OPTIONS_LIMIT,
+        .length = OPTIONS_LIMIT,
         .width  = 30
     };
     const struct Point menu_start_point = {
-        .y = (terminal_resolution.height / 2) - (menu_resolution.height/2),
+        .y = (terminal_resolution.length / 2) - (menu_resolution.length/2),
         .x = (terminal_resolution.width / 2)  - (menu_resolution.width/2)
     };
-    WINDOW * const menu_border_window = newwin(menu_resolution.height+2, menu_resolution.width+2, menu_start_point.y-1, menu_start_point.x-1);
-    WINDOW * const menu_window        = newwin(menu_resolution.height,   menu_resolution.width,   menu_start_point.y,   menu_start_point.x);
+    WINDOW * const menu_border_window = newwin(menu_resolution.length+2, menu_resolution.width+2, menu_start_point.y-1, menu_start_point.x-1);
+    WINDOW * const menu_window        = newwin(menu_resolution.length,   menu_resolution.width,   menu_start_point.y,   menu_start_point.x);
     keypad(menu_window, TRUE);
 
     const uint8_t title_center = (terminal_resolution.width/2) - (67/2);
