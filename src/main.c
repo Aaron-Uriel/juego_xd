@@ -71,34 +71,23 @@ int main() {
     bool is_enter_pressed = false;
     int32_t input;
     do {
-        mvwprintw(menu_window, NEW_GAME,      0, "1.- %-18s [ ]", "Nuevo juego.");
-        mvwprintw(menu_window, CONTINUE_GAME, 0, "2.- %-18s [ ]", "Continuar juego.");
-        mvwprintw(menu_window, EXIT,          0, "3.- %-18s [ ]", "Salir.");
+        mvwprintw(menu_window, NEW_GAME,      0, " 1.- %-18s [ ]", "Nuevo juego.");
+        mvwprintw(menu_window, CONTINUE_GAME, 0, " 2.- %-18s [ ]", "Continuar juego.");
+        mvwprintw(menu_window, EXIT,          0, " 3.- %-18s [ ]", "Salir.");
 
-        mvwaddch(menu_window, selected_option, 24, '*');
+        mvwaddch(menu_window, selected_option, 25, '*');
 
         input = wgetch(menu_window);
-        mvwaddch(menu_window, selected_option, 24, ' ');
+        mvwaddch(menu_window, selected_option, 25, ' ');
         switch (input) {
-            case KEY_UP: case 'w':
-                if ((selected_option - 1) > -1) {
-                    selected_option--;
-                }
-                break;
-            case KEY_DOWN: case 's':
-                if ((selected_option + 1) < OPTIONS_LIMIT) {
-                    selected_option++;
-                }
-                break;
-            case '\n':
-                is_enter_pressed = true;
+            case KEY_UP:   case 'w': --selected_option; break;
+            case KEY_DOWN: case 's': ++selected_option; break;
+            case '\n':     is_enter_pressed = true;
         }
+        if (selected_option > OPTIONS_LIMIT - 1) { selected_option = 0; }
         if (is_enter_pressed == true) {
             switch (selected_option) {
-                case NEW_GAME:
-                    new_game();
-                    break;
-
+                case NEW_GAME: new_game(); break;
                 case EXIT:
                     delwin(menu_border_window);
                     delwin(menu_window);
