@@ -9,17 +9,25 @@
 
 int32_t rand_min_max(int32_t min, int32_t max);
 
+bool cell_is_free(struct Cell *cell) {
+    if (cell->kind == KIND_CHARACTER) {
+        return false;
+    }
+    if (cell->kind == KIND_ENTITY_HOLDER && cell->content.entity_holder != NULL) {
+        return false;
+    }
+    return true;
+}
+
 void init_world(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]) {
-    struct Cell *tagged_cell;
-    uint16_t row, column, i;
+    struct Cell *cell;
+    uint16_t row, column;
     for (row = 0; row < WORLD_LENGTH; row++) {
         for (column = 0; column < WORLD_WIDTH; column++) {
-            tagged_cell = &world[row][column];
+            cell = &world[row][column];
 
-            tagged_cell->tag = ENTITY_STACK;
-            for (i = 0; i < STACK_LIMIT; i++) {
-                tagged_cell->cell.entity_stack[i] = NULL;
-            }
+            cell->kind = KIND_ENTITY_HOLDER;
+            cell->content.entity_holder = NULL;
         }
     }
 }
@@ -44,17 +52,13 @@ void init_entity(struct Entity *new_entity, struct Cell world[WORLD_LENGTH][WORL
         };
         
         cell = &world[initial_position.y][initial_position.x];
-    } while (cell->tag == CHARACTER);
+    } while (!cell_is_free(cell));
 
     // Las posición actual y anterior son la misma al principio
     new_entity->current_position = initial_position;
     new_entity->previous_position = initial_position;
     
-    bool return_status = add_entity_to_cell_stack(new_entity, cell);
-    if (return_status == EXIT_FAILURE) {
-        fprintf(stderr, "Error crítico ocurrido: la entidad no pudo inicializarse");
-        exit(EXIT_FAILURE);
-    }
+    cell->content.entity_holder = new_entity;
 
     new_entity->character = character;
     new_entity->color = NO_COLOR;
@@ -66,14 +70,18 @@ void init_player(struct Entity * const new_player, struct Cell world[WORLD_LENGT
         .x = ((WORLD_LENGTH - 1) / 2) / gameplay_resolution.width
     };
 
+    // Queremos que donde se genere el jugador sea mas o menos por el centro del cuadrante
+    const uint8_t vertical_margin = gameplay_resolution.length * 0.20;
+    const uint8_t horizontal_margin = gameplay_resolution.width * 0.40;
+
     const struct Position start_point = {
-        .y = selected_quadrant.y * gameplay_resolution.length + 4,
-        .x = selected_quadrant.x * gameplay_resolution.width + 8
+        .y = selected_quadrant.y * gameplay_resolution.length + vertical_margin,
+        .x = selected_quadrant.x * gameplay_resolution.width + vertical_margin
     };
 
     struct Position end_point = {
-        .y = start_point.y + gameplay_resolution.length - 4,
-        .x = start_point.x + gameplay_resolution.width - 8
+        .y = start_point.y + gameplay_resolution.length - vertical_margin,
+        .x = start_point.x + gameplay_resolution.width - horizontal_margin
     };
 
     if (end_point.y >= WORLD_LENGTH) { end_point.y = WORLD_LENGTH - 1; }
@@ -86,44 +94,48 @@ void init_player(struct Entity * const new_player, struct Cell world[WORLD_LENGT
         initial_position.x = rand_min_max(start_point.x, end_point.x);
 
         cell = &world[initial_position.y][initial_position.x];
-    } while(cell->tag == CHARACTER);
+    } while(!cell_is_free(cell));
 
     // Las posición actual y anterior son la misma al principio
     new_player->current_position = initial_position;
     new_player->previous_position = initial_position;
-    
-    bool return_status = add_entity_to_cell_stack(new_player, cell);
-    if (return_status == EXIT_FAILURE) {
-        fprintf(stderr, "Error crítico ocurrido: la entidad no pudo inicializarse");
-        exit(EXIT_FAILURE);
-    }
+
+    cell->content.entity_holder = new_player;
+
     new_player->character = character;
     new_player->color = PLAYER;
 }
 
-bool add_entity_to_cell_stack(struct Entity * const entity, struct Cell *cell) {
-    if (cell->tag != ENTITY_STACK) {
+bool try_to_update_entity_position(struct Entity * const entity, struct PositionChangeRequest position_request, struct VisibleWorld * const visible_world) {
+    struct Cell * const previous_cell = &visible_world->world[entity->current_position.y][entity->current_position.x];
+    struct Cell *next_cell;
+
+    entity->previous_position = entity->current_position;
+
+    struct Position new_position = entity->current_position;
+    switch (position_request.axis) {
+        case AXIS_Y: 
+            new_position.y += (position_request.delta == DELTA_POSITIVE)? 1: -1; break;
+        case AXIS_X:
+            new_position.x += (position_request.delta == DELTA_POSITIVE)? 1: -1;
+    }
+
+    bool is_out_of_bounds = (new_position.x >= WORLD_WIDTH) || (new_position.y >= WORLD_LENGTH);
+    if (is_out_of_bounds) {
         return EXIT_FAILURE;
     }
 
-    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
-        if (cell->cell.entity_stack[i] == NULL) {
-            entity->stack_index = i;
-            cell->cell.entity_stack[i] = entity;
-            return EXIT_SUCCESS;
-        }
-    }
+    next_cell = &visible_world->world[new_position.y][new_position.x];
 
-    return EXIT_FAILURE;
-}
-
-bool remove_entity_from_cell_stack(struct Entity * const entity, struct Cell *cell) {
-    const bool its_not_the_same_entity = cell->cell.entity_stack[entity->stack_index] != entity;
-    const bool its_not_an_entity_stack = cell->tag != ENTITY_STACK;
-    if (its_not_the_same_entity || its_not_an_entity_stack) {
+    if (!cell_is_free(next_cell)) {
         return EXIT_FAILURE;
     }
 
-    cell->cell.entity_stack[entity->stack_index] = NULL;
+    entity->current_position = new_position;
+
+    // Borramos la información de la entidad en la celda anterior y la ponemos en la nueva celda
+    previous_cell->content.entity_holder = NULL;
+    next_cell->content.entity_holder = entity;
+
     return EXIT_SUCCESS;
 }

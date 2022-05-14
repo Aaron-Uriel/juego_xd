@@ -94,12 +94,12 @@ void new_game() {
          */
         struct PositionChangeRequest position_request;
         switch (option) {
-            case KEY_UP:   case KEY_DOWN:  case 'w': case 's': position_request.axis = Y_AXIS; break;
-            case KEY_LEFT: case KEY_RIGHT: case 'a': case 'd': position_request.axis = X_AXIS; break;
+            case KEY_UP:   case KEY_DOWN:  case 'w': case 's': position_request.axis = AXIS_Y; break;
+            case KEY_LEFT: case KEY_RIGHT: case 'a': case 'd': position_request.axis = AXIS_X; break;
         }
         switch (option) {
-            case KEY_UP:   case KEY_LEFT:  case 'w': case 'a': position_request.delta = NEGATIVE; break;
-            case KEY_DOWN: case KEY_RIGHT: case 's': case 'd': position_request.delta = POSITIVE; break;
+            case KEY_UP:   case KEY_LEFT:  case 'w': case 'a': position_request.delta = DELTA_NEGATIVE; break;
+            case KEY_DOWN: case KEY_RIGHT: case 's': case 'd': position_request.delta = DELTA_POSITIVE; break;
         }
         struct EntityRequest request = {
             .requesting_entity = player,
@@ -154,40 +154,6 @@ void update_visible_world(struct VisibleWorld * const visible_world, struct Enti
     }
 }
 
-bool try_to_update_entity_position(struct Entity * const entity, struct PositionChangeRequest position_request, struct VisibleWorld * const visible_world) {
-    entity->previous_position = entity->current_position;
-
-    struct Position new_position = entity->current_position;
-    if (position_request.axis == Y_AXIS) {
-        if (position_request.delta == POSITIVE) {
-            new_position.y += 1;
-        } else 
-        if (position_request.delta == NEGATIVE) {
-            new_position.y -= 1;
-        }
-    } else
-    if (position_request.axis == X_AXIS) {
-        if (position_request.delta == POSITIVE) {
-            new_position.x += 1;
-        } else
-        if (position_request.delta == NEGATIVE) {
-            new_position.x -= 1;
-        }
-    }
-    bool is_out_of_bounds = (new_position.x >= WORLD_WIDTH) || (new_position.y >= WORLD_LENGTH);
-    if (is_out_of_bounds) {
-        return EXIT_FAILURE;
-    }
-    bool is_over_something = (visible_world->world[new_position.y][new_position.x].tag == CHARACTER);
-    if (is_over_something) {
-        return EXIT_FAILURE;
-    }
-
-    entity->current_position = new_position;
-
-    return EXIT_SUCCESS;
-}
-
 void handle_all_position_change_requests(struct VisibleWorld *visible_world) {
     struct EntityRequest *current_entity_request;
     struct Entity *entity;
@@ -201,23 +167,12 @@ void handle_all_position_change_requests(struct VisibleWorld *visible_world) {
             continue;
         }
 
-        bool return_status;
         switch (current_entity_request->kind) {
             case POSITION_REQUEST: 
-                return_status = try_to_update_entity_position(entity, current_entity_request->request.position_change_request, visible_world);
+                try_to_update_entity_position(entity, current_entity_request->request.position_change_request, visible_world);
                 break;
             case ATTACK_REQUEST:
                 break;
-        }
-
-        if (return_status == EXIT_SUCCESS) {
-            // Quitamos la entidad de la celda en la que estaba
-            struct Cell *cell = &visible_world->world[entity->previous_position.y][entity->previous_position.x];
-            remove_entity_from_cell_stack(entity, cell);
-
-            // Y la ponemos en la nueva celda
-            cell = &visible_world->world[entity->current_position.y][entity->current_position.x];
-            add_entity_to_cell_stack(entity, cell);
         }
 
         current_entity_request->requesting_entity = NULL;
@@ -239,12 +194,12 @@ void render_visible(struct VisibleWorld *visible_world, WINDOW *window_array[], 
         * al gameplay (restandole los lados ocupados por el borde) y los últimos son los relativos al mapa del mundo.
         * Los del mapa se calculan relativos a la posición del punto mas arriba a la izquierda que es posible ver. 
         */
-        const struct Cell *tagged_cell;
+        const struct Cell *cell;
         for (gameplay_window_row = 0, y = visible_world->start_point.y; gameplay_window_row <= (gameplay_resolution.length) && (y < WORLD_LENGTH); gameplay_window_row++, y++) {
             wmove(gameplay_window, gameplay_window_row, 0);
             for (gameplay_window_column = 0, x = visible_world->start_point.x; (gameplay_window_column <= (gameplay_resolution.width)) && (x < WORLD_WIDTH); gameplay_window_column++, x++) {
-                tagged_cell = &visible_world->world[y][x];
-                wprintw(gameplay_window, "%lc", (tagged_cell->tag == CHARACTER)? tagged_cell->cell.character: ' ');
+                cell = &visible_world->world[y][x];
+                wprintw(gameplay_window, "%lc", (cell->kind == KIND_CHARACTER)? cell->content.character: ' ');
             }
         }
     }
@@ -279,13 +234,11 @@ void render_visible(struct VisibleWorld *visible_world, WINDOW *window_array[], 
     wmove(info_window, 0, 0);
     wprintw(info_window, "P(%d, %d)\n"
                          "Gameplay alto %d\n"
-                         "Gameplay ancho %d\n"
-                         "Índice de posición del jugador %d",
+                         "Gameplay ancho %d\n",
                          player->current_position.y, 
                          player->current_position.x,
                          gameplay_resolution.length, 
-                         gameplay_resolution.width,
-                         player->stack_index
+                         gameplay_resolution.width
 
     );
     wrefresh(info_window);
