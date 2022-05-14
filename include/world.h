@@ -33,11 +33,14 @@ struct Position {
 };
 
 struct Entity {
+    // Cosas técnicas
     struct Position current_position;
     struct Position previous_position;
+    uint8_t stack_index;
+
+    // Atributos
     wchar_t character;
     enum Colors color;
-    uint8_t stack_index;
 };
 
 enum Axis {Y_AXIS, X_AXIS};
@@ -80,8 +83,9 @@ struct VisibleWorld {
 };
 
 void init_world(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
-void init_visible_world(struct VisibleWorld *, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
-struct Entity *init_entity(struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
+void init_visible_world(struct VisibleWorld * const, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
+void init_entity(struct Entity *, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
+void init_player(struct Entity * const new_player, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character, struct Resolution gameplay_resolution);
 
 bool add_entity_to_cell_stack(struct Entity * const, struct Cell *cell);
 bool remove_entity_from_cell_stack(struct Entity * const, struct Cell *cell);

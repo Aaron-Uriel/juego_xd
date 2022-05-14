@@ -20,7 +20,7 @@ enum GameElements {
 };
 
 
-void update_visible_world(struct VisibleWorld * const, struct Entity *[ENTITY_LIMIT], struct Resolution);
+void update_visible_world(struct VisibleWorld * const, struct Entity * const[ENTITY_LIMIT], struct Resolution);
 void render_visible(struct VisibleWorld * const, WINDOW *window_array[], const struct Resolution resolution_array[]);
 void draw_window_borders(WINDOW *window);
 bool add_request(struct EntityRequest, struct VisibleWorld *);
@@ -55,15 +55,16 @@ void new_game() {
     wrefresh(border_gameplay_window);
     wrefresh(border_info_window);
 
-    struct Entity * entities[ENTITY_LIMIT];
-    for (int i = 0; i < ENTITY_LIMIT; i++) {
-        entities[i] = init_entity(world, 0x0D9E);
-    }
-    struct Entity * const player = entities[0];
-    player->color = PLAYER;
-
     struct VisibleWorld *visible_world = &(struct VisibleWorld) {};
     init_visible_world(visible_world, world);
+    
+    struct Entity *entities[ENTITY_LIMIT];
+    for (int i = 0; i < ENTITY_LIMIT; i++) {
+        entities[i] = malloc(sizeof (entities[i]));
+        init_entity(entities[i], world, 0x0D9E);
+    }
+    struct Entity * const player = entities[0];
+    init_player(player, world, 0x0DAC, gameplay_resolution);    
 
     int32_t option;
     do {
@@ -103,13 +104,13 @@ void new_game() {
         struct EntityRequest request = {
             .requesting_entity = player,
             .kind = POSITION_REQUEST,
-            .request = position_request
+            .request = { position_request }
         };
         add_request(request, visible_world);
     } while(1);
 }
 
-void update_visible_world(struct VisibleWorld * const visible_world, struct Entity *entities[ENTITY_LIMIT], struct Resolution resolution) {
+void update_visible_world(struct VisibleWorld * const visible_world, struct Entity * const entities[ENTITY_LIMIT], struct Resolution resolution) {
     struct Entity *player = entities[0];
 
     struct Position possible_new_quadrant;

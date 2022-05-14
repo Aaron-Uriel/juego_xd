@@ -36,5 +36,5 @@ int msleep(uint64_t msec) {
 }
 
 uint32_t rand_min_max(uint32_t min, uint32_t max) {
-    return (rand() % max) + min;
+    return ((rand() % (max - min + 1)) + min);
 }
