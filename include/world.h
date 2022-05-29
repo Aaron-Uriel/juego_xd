@@ -8,6 +8,8 @@
 
 #include "colors.h"
 #include "resolution.h"
+#include "utils.h"
+#include "game.h"
 
 /*
  * Explicación de la lógica del mundo.
@@ -17,25 +19,11 @@
  * Las celdas que son arreglos de punteros de entidades, son las partes donde podrán andar las entidades.
  */
 
-enum Constants {
-    WORLD_LENGTH = 100,
-    WORLD_WIDTH = 200,
-    ENTITY_LIMIT = 128,
-    STACK_LIMIT = 20,
-    UNINITIALIZED_8 = UINT8_MAX,
-    UNINITIALIZED_16 = UINT16_MAX,
-    UNINITIALIZED_32 = UINT32_MAX
-};
-
-struct Position {
-    uint16_t x;
-    uint16_t y;
-};
-
 struct Entity {
     // Cosas técnicas
     struct Position current_position;
     struct Position previous_position;
+    enum { FACING_NORTH, FACING_EAST, FACING_SOUTH, FACING_WEST } facing;
 
     // Atributos
     wchar_t character;
@@ -51,16 +39,12 @@ union InternalRequest {
     struct PositionChangeRequest position_change_request;
 };
 
-enum RequestKind { POSITION_REQUEST, ATTACK_REQUEST };
 struct EntityRequest {
     struct Entity *requesting_entity;
-    enum RequestKind kind;
-    union InternalRequest request;
-};
-
-union InternalCell {
-    wchar_t character;
-    struct Entity *entity;
+    enum { ENTITY_REQUEST_KIND_POSITION, ENTITY_REQUEST_KIND_ATTACK } kind;
+    union {
+        struct PositionChangeRequest position_change_request;
+    } content;
 };
 
 struct Cell {
@@ -81,12 +65,12 @@ struct VisibleWorld {
     struct EntityRequest requests_stack[STACK_LIMIT];
 };
 
-void init_world(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
-void init_visible_world(struct VisibleWorld * const, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
-void init_entity(struct Entity *, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character);
-void init_player(struct Entity * const new_player, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], wchar_t character, struct Resolution gameplay_resolution);
+void world_init(struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
+void visible_world_init(struct VisibleWorld * const, struct Cell world[WORLD_LENGTH][WORLD_WIDTH]);
+void visible_world_update(struct VisibleWorld * const visible_world, struct Entity * const entities[STACK_LIMIT], const struct Resolution resolution);
 
-bool try_to_update_entity_position(struct Entity * const , struct PositionChangeRequest , struct VisibleWorld * const );
-
-
+void entity_init(struct Entity * const new_entity, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], const wchar_t character);
+void entity_player_init(struct Entity * const new_player, struct Cell world[WORLD_LENGTH][WORLD_WIDTH], const wchar_t character, const struct Resolution gameplay_resolution);
+bool entity_request_add(const struct EntityRequest request, struct EntityRequest requests_stack[STACK_LIMIT]);
+bool entity_try_to_update_position(struct Entity * const entity, const struct PositionChangeRequest position_request, const struct VisibleWorld * const visible_world);
 #endif

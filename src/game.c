@@ -23,7 +23,6 @@ enum GameElements {
 void update_visible_world(struct VisibleWorld * const, struct Entity * const[ENTITY_LIMIT], struct Resolution);
 void render_visible(struct VisibleWorld * const, WINDOW *window_array[], const struct Resolution resolution_array[]);
 void draw_window_borders(WINDOW *window);
-bool add_request(struct EntityRequest, struct VisibleWorld *);
 void handle_all_position_change_requests(struct VisibleWorld * const);
 
 void new_game() {
@@ -34,8 +33,9 @@ void new_game() {
      * o si guarda un arreglo de entidades (el cual nos va a decir cuales y cuantas son las entidades sobre tal casilla).
      */
     struct Cell world[WORLD_LENGTH][WORLD_WIDTH];
-    init_world(world);   WINDOW * const border_gameplay_window = newwin(terminal_resolution.length, terminal_resolution.width * 0.70, 0, 0);
+    world_init(world);
 
+    WINDOW * const border_gameplay_window = newwin(terminal_resolution.length, terminal_resolution.width * 0.70, 0, 0);
     WINDOW * const border_info_window = newwin(terminal_resolution.length, terminal_resolution.width * 0.30, 0, terminal_resolution.width * 0.70);
 
     WINDOW * const gameplay_window = newwin(terminal_resolution.length - 2, (terminal_resolution.width * 0.70) - 2, 1, 1);
@@ -55,20 +55,20 @@ void new_game() {
     wrefresh(border_gameplay_window);
     wrefresh(border_info_window);
 
-    struct VisibleWorld *visible_world = &(struct VisibleWorld) {};
-    init_visible_world(visible_world, world);
+    struct VisibleWorld *visible_world = &(struct VisibleWorld) { 0 };
+    visible_world_init(visible_world, world);
     
     struct Entity *entities[ENTITY_LIMIT];
     for (int i = 0; i < ENTITY_LIMIT; i++) {
         entities[i] = malloc(sizeof (entities[i]));
-        init_entity(entities[i], world, 0x0D9E);
+        entity_init(entities[i], world, 0x0D9E);
     }
     struct Entity * const player = entities[0];
-    init_player(player, world, 0x0DAC, gameplay_resolution);    
+    entity_player_init(player, world, 0x0DAC, gameplay_resolution);    
 
     int32_t option;
     do {
-        update_visible_world(visible_world, entities, gameplay_resolution);
+        visible_world_update(visible_world, entities, gameplay_resolution);
         handle_all_position_change_requests(visible_world);
         render_visible(visible_world, window_array, resolution_array);
 
@@ -103,55 +103,11 @@ void new_game() {
         }
         struct EntityRequest request = {
             .requesting_entity = player,
-            .kind = POSITION_REQUEST,
-            .request = { position_request }
+            .kind = ENTITY_REQUEST_KIND_POSITION,
+            .content = { position_request }
         };
-        add_request(request, visible_world);
+        entity_request_add(request, visible_world->requests_stack);
     } while(1);
-}
-
-void update_visible_world(struct VisibleWorld * const visible_world, struct Entity * const entities[ENTITY_LIMIT], struct Resolution resolution) {
-    struct Entity *player = entities[0];
-
-    struct Position possible_new_quadrant;
-    possible_new_quadrant.y = player->current_position.y / resolution.length;
-    possible_new_quadrant.x = player->current_position.x / resolution.width;
-
-    if (visible_world->is_new_quadrant == true) { visible_world->is_new_quadrant = false; }
-
-    bool we_are_in_new_quadrant = (possible_new_quadrant.x != visible_world->quadrant.x || possible_new_quadrant.y != visible_world->quadrant.y);
-    if (we_are_in_new_quadrant) {
-        visible_world->is_new_quadrant = true;
-
-        visible_world->quadrant = possible_new_quadrant;
-
-        visible_world->start_point.y = resolution.length * visible_world->quadrant.y;
-        visible_world->start_point.x = resolution.width * visible_world->quadrant.x;
-
-        visible_world->end_point.y = visible_world->start_point.y + resolution.length;
-        visible_world->end_point.x = visible_world->start_point.x + resolution.width;
-
-        struct Entity *current_entity;
-        bool is_at_screen, is_at_screen_vertically, is_at_screen_horizontally;
-        for (int i = 0, stack_index = 0; i < ENTITY_LIMIT; i++) {
-            current_entity = entities[i];
-            
-            is_at_screen_vertically = (current_entity->current_position.y >= visible_world->start_point.y) && (current_entity->current_position.y < visible_world->end_point.y);
-            is_at_screen_horizontally = (current_entity->current_position.x >= visible_world->start_point.x) && (current_entity->current_position.x < visible_world->end_point.x);
-            is_at_screen = is_at_screen_horizontally && is_at_screen_vertically;
-    
-            if (is_at_screen) {
-                visible_world->visible_entities[stack_index++] = current_entity;
-                if (i == 10) {
-                    break;
-                }
-            }
-        }
-    
-        for (int i = 0; i < STACK_LIMIT; i++) {
-            visible_world->requests_stack[i].requesting_entity = NULL;
-        }
-    }
 }
 
 void handle_all_position_change_requests(struct VisibleWorld *visible_world) {
@@ -168,10 +124,10 @@ void handle_all_position_change_requests(struct VisibleWorld *visible_world) {
         }
 
         switch (current_entity_request->kind) {
-            case POSITION_REQUEST: 
-                try_to_update_entity_position(entity, current_entity_request->request.position_change_request, visible_world);
+            case ENTITY_REQUEST_KIND_POSITION: 
+                entity_try_to_update_position(entity, current_entity_request->content.position_change_request, visible_world);
                 break;
-            case ATTACK_REQUEST:
+            case ENTITY_REQUEST_KIND_ATTACK:
                 break;
         }
 
@@ -242,19 +198,4 @@ void render_visible(struct VisibleWorld *visible_world, WINDOW *window_array[], 
 
     );
     wrefresh(info_window);
-}
-
-bool add_request(struct EntityRequest request, struct VisibleWorld *visible_world) {
-    uint8_t stack_position = UNINITIALIZED_8;
-    for (uint8_t i = 0; i < STACK_LIMIT; i++) {
-        if (visible_world->requests_stack->requesting_entity == NULL) {
-            stack_position = i;
-            break;
-        }
-    }
-    if (stack_position == UNINITIALIZED_8) { return 1; }
-
-    visible_world->requests_stack[stack_position] = request;
-
-    return 0;
 }
